@@ -26,6 +26,7 @@ model Usuario {
 model Cartao {
   id            Int       @id @default(autoincrement())
   numeroCartao  String    @unique
+  hashCartao    String    @unique // Hash dinâmico + matrícula
   status        Status    @default(ATIVO)
   dataAtivacao  DateTime  @default(now())
   usuario       Usuario   @relation(fields: [idUsuario], references: [id])

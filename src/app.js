@@ -1,27 +1,12 @@
 const fastify = require('fastify')({ logger: true })
-const { PrismaClient } = require('@prisma/client')
+const prismaPlugin = require('./plugins/prismaPlugin');
+userRoutes = require('./routes/userRoutes')
 
-const prisma = new PrismaClient()
+fastify.register(prismaPlugin);
+fastify.register(userRoutes, { prefix: '/api/users' });
 
-// Registre as rotas
-fastify.register(require('./routes/userRoutes'))
+module.exports = fastify
 
-// Adicione um hook para fechar a conexão do Prisma quando o servidor for encerrado
-fastify.addHook('onClose', async (instance, done) => {
-  await prisma.$disconnect()
-  done()
-})
 
-// Função para iniciar o servidor
-async function start() {
-  try {
-    await fastify.listen({ port: 3000 })
-  } catch (err) {
-    fastify.log.error(err)
-    process.exit(1)
-  }
-}
-
-start()
 
 module.exports = { fastify, prisma }

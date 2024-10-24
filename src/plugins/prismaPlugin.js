@@ -1,15 +1,16 @@
-const fp  = require('fastify-plugin');
-const { PrismaClient } = require('prisma/client');
+const fp = require('fastify-plugin')
+const { PrismaClient } = require('@prisma/client')  // Corrigido o caminho de importação
 
 async function prismaPlugin(fastify, options) {
-    const prisma =  new PrismaClient();
-    await prisma.$connect();
+  const prisma = new PrismaClient()
 
-    fastify.addHook('onClose', async(fastify) => {
-        await prisma.$disconnect();
-    })
+  await prisma.$connect()
 
-    fastify.decorate('prisma', prisma);
+  fastify.addHook('onClose', async (fastify) => {
+    await prisma.$disconnect()
+  })
+
+  fastify.decorate('prisma', prisma)
 }
 
-module.exports = fp(prismaPlugin);
+module.exports = fp(prismaPlugin)

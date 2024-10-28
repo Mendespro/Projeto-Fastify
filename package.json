@@ -3,15 +3,19 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "ts-node src/server.js",
-    "start": "node dist/server.js"
+    "start": "node src/server.js",
+    "test": "mocha tests/**/*.test.js",
+    "test:watch": "mocha tests/**/*.test.js --watch"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "Projeto Fastify Este é um projeto de API REST usando Fastify, Prisma e PostgreSQL. Pré-requisitos",
   "devDependencies": {
+    "axios": "^1.6.0",
+    "chai": "^4.3.7",
+    "mocha": "^10.2.0",
     "prisma": "^5.21.1"
   },
   "dependencies": {

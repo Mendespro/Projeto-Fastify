@@ -26,6 +26,8 @@ const userController = {
         reply.code(400).send({ error: 'Email already exists' })
         return
       }
+      console.log(error);
+      
       throw error
     }
   },

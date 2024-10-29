@@ -83,6 +83,33 @@ const usuarioController = {
         error: 'Erro ao atualizar saldo'
       });
     }
+  },
+
+  // Bloquear/Desbloquear Cartão
+  async bloquearDesbloquearCartao(request, reply) {
+    try {
+      const { matricula } = request.params;
+      const { acao } = request.body; // "bloquear" ou "desbloquear"
+  
+      const novoStatus = acao === 'bloquear' ? 'bloqueado' : 'ativo';
+  
+      const usuario = await prisma.usuario.update({
+        where: { matricula },
+        data: {
+          cartao: {
+            update: {
+              status: novoStatus
+            }
+          }
+        }
+      });
+  
+      return reply.code(200).send({ message: `Cartão ${acao} com sucesso` });
+    } catch (error) {
+      return reply.code(500).send({
+        error: 'Erro ao atualizar status do cartão'
+      });
+    }
   }
 };
 

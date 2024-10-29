@@ -90,3 +90,5 @@ const acessoService = {
     }
   },
 };
+
+module.exports = acessoService;

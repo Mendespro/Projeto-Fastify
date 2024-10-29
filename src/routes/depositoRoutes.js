@@ -1,5 +1,5 @@
 const depositoController = require('../controllers/depositoController');
-const { verificarToken } = require('../middlewares/auth');
+const { verificarToken, verificarAdmin } = require('../middlewares/auth');
 
 async function routes(fastify, options) {
   fastify.post('/depositos', {
@@ -29,3 +29,5 @@ async function routes(fastify, options) {
     }
   }, depositoController.buscarDepositos);
 }
+
+module.exports = routes;

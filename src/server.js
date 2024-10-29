@@ -1,6 +1,6 @@
 const fastify = require('fastify')({ logger: true });
 
-// Registra as rotas
+// Importa corretamente os módulos de rotas
 fastify.register(require('./routes/acessoRoutes'));
 fastify.register(require('./routes/cartaoRoutes'));
 fastify.register(require('./routes/depositoRoutes'));

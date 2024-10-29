@@ -1,5 +1,5 @@
 const refeicaoController = require('../controllers/refeicaoController');
-const { verificarToken } = require('../middlewares/auth');
+const { verificarToken, verificarAdmin } = require('../middlewares/auth');
 
 async function routes(fastify, options) {
   fastify.get('/refeicoes', {
@@ -16,8 +16,9 @@ async function routes(fastify, options) {
     }
   }, refeicaoController.buscarRefeicoes);
 
+  // Rota de relatório de refeições (somente administrador)
   fastify.get('/refeicoes/relatorio', {
-    preHandler: [verificarToken],
+    preHandler: [verificarToken, verificarAdmin],
     schema: {
       querystring: {
         type: 'object',
@@ -30,3 +31,5 @@ async function routes(fastify, options) {
     }
   }, refeicaoController.gerarRelatorio);
 }
+
+module.exports = routes;

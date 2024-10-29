@@ -1,7 +1,8 @@
 const usuarioController = require('../controllers/usuarioController');
-const { verificarToken } = require('../middlewares/auth');
+const { verificarToken, verificarAdmin, verificarFuncionario } = require('../middlewares/auth');
 
 async function routes(fastify, options) {
+  // Rota de cadastro de usuário (funcionário)
   fastify.post('/usuarios', {
     schema: {
       body: {
@@ -14,16 +15,19 @@ async function routes(fastify, options) {
           senha: { type: 'string', minLength: 6 },
           fotoUsuario: { type: 'string', format: 'binary' }
         }
-      }
-    }
+      },
+    },
+    preHandler: [verificarToken, verificarFuncionario]
   }, usuarioController.criar);
 
+  // Buscar usuário por matrícula
   fastify.get('/usuarios/:matricula', {
-    preHandler: [verificarToken]
+    preHandler: [verificarToken, verificarFuncionario]
   }, usuarioController.buscarPorMatricula);
 
+  // Atualizar saldo (funcionário)
   fastify.put('/usuarios/:matricula/saldo', {
-    preHandler: [verificarToken],
+    preHandler: [verificarToken, verificarFuncionario],
     schema: {
       body: {
         type: 'object',
@@ -34,4 +38,11 @@ async function routes(fastify, options) {
       }
     }
   }, usuarioController.atualizarSaldo);
+
+  // Bloquear/Desbloquear Cartão (funcionário)
+  fastify.put('/usuarios/:matricula/cartao/bloquear', {
+    preHandler: [verificarToken, verificarFuncionario]
+  }, usuarioController.bloquearDesbloquearCartao);
 }
+
+module.exports = routes;

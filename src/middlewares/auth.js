@@ -1,29 +1,33 @@
-const { verify } = require('jsonwebtoken');
+const jwt = require('jsonwebtoken'); 
+const secret = 'seu_secret_jwt';
 
-const verificarToken = async (request, reply) => {
+async function verificarToken(request, reply) {
   try {
-    const token = request.headers.authorization?.replace('Bearer ', '');
-
+    const token = request.headers.authorization?.split(' ')[1];
     if (!token) {
-      throw new Error('Token não fornecido');
+      return reply.code(401).send({ error: 'Token não fornecido' });
     }
 
-    const decoded = verify(token, process.env.JWT_SECRET);
-    request.usuario = decoded;
+    const decoded = jwt.verify(token, secret);
+    request.user = decoded;
 
-    return;
+    return true;
   } catch (error) {
-    reply.code(401).send({
-      error: 'Não autorizado'
-    });
+    return reply.code(401).send({ error: 'Token inválido' });
   }
-};
+}
 
-module.exports = { verificarToken };
+function verificarAdmin(request, reply, done) {
+  if (request.user && request.user.role === 'moderador') {
+    done();
+  } else {
+    reply.code(403).send({ error: 'Acesso negado. Permissões insuficientes.' });
+  }
+}
 
-module.exports = {
-  cartaoController,
-  depositoController,
-  refeicaoController,
-  routes
-};
+function verificarFuncionario(request, reply, done) {
+  // Lógica para verificar se o usuário é funcionário
+  done(); // Chame done() quando terminar
+}
+
+module.exports = { verificarToken, verificarAdmin, verificarFuncionario };

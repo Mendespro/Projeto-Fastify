@@ -30,3 +30,4 @@ const depositoController = {
     }
   }
 };
+module.exports = depositoController;

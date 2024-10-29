@@ -1,5 +1,5 @@
 const cartaoController = require('../controllers/cartaoController');
-const { verificarToken } = require('../middlewares/auth');
+const { verificarToken, verificarAdmin } = require('../middlewares/auth');
 
 async function routes(fastify, options) {
   fastify.post('/cartoes', {
@@ -33,4 +33,15 @@ async function routes(fastify, options) {
   fastify.get('/cartoes/:numeroCartao', {
     preHandler: [verificarToken]
   }, cartaoController.buscarCartaoPorNumero);
+  
+  // Rota para bloquear/desbloquear o cartão (somente administrador)
+  fastify.put('/cartao/:id/bloquear', {
+    preHandler: [verificarToken, verificarAdmin],
+  }, cartaoController.bloquearCartao);
+
+  fastify.put('/cartao/:id/desbloquear', {
+    preHandler: [verificarToken, verificarAdmin],
+  }, cartaoController.desbloquearCartao);
 }
+
+module.exports = routes;

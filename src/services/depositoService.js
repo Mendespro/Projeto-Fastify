@@ -48,3 +48,5 @@ const depositoService = {
       }
     },
   };
+  
+module.exports = depositoService;

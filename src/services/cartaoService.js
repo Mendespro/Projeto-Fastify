@@ -4,6 +4,54 @@ const { generateCardHash } = require('../utils/hash');
 const prisma = new PrismaClient();
 
 const cartaoService = {
+  
+  async criarCartao(numeroCartao, matricula) {
+    // Gere o hash usando a função disponível em utils
+    const hashCartao = generateCardHash(numeroCartao, matricula);
+
+    // Crie o cartão no banco de dados
+    const cartao = await prisma.cartao.create({
+      data: {
+        numeroCartao,
+        hashCartao,
+        status: 'ATIVO',  // Defina o status inicial como 'ATIVO'
+        usuario: { connect: { matricula } }  // Associe o cartão ao usuário pela matrícula
+      }
+    });
+
+    return cartao;
+  },
+
+  async bloquearCartao(numeroCartao, motivo) {
+    const cartao = await prisma.cartao.update({
+      where: { numeroCartao },
+      data: {
+        status: 'BLOQUEADO'
+      }
+    });
+  
+    // Registre o motivo do bloqueio
+    await prisma.bloqueioCartao.create({
+      data: {
+        motivoBloqueio: motivo,
+        idCartao: cartao.id
+      }
+    });
+  
+    return cartao;
+  },
+  
+  async buscarCartao(numeroCartao) {
+    const cartao = await prisma.cartao.findUnique({
+      where: { numeroCartao },
+      include: {
+        usuario: true
+      }
+    });
+  
+    return cartao;
+  },
+
   async validarCartao(numeroCartao, matricula) {
     const hashAtual = generateCardHash(numeroCartao, matricula);
     

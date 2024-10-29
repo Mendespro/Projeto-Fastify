@@ -49,3 +49,5 @@ const refeicaoService = {
       }
     },
   };
+
+  module.exports = refeicaoService;

@@ -1,29 +1,34 @@
-const { verify } = require('jsonwebtoken');
+const jwt = require('jsonwebtoken');
+const { validarCartao, verificarHash } = require('../services/transacaoService');
 
-const verificarToken = async (request, reply) => {
+// Middleware para autenticação com comunicação com hardware
+module.exports = async (req, res, next) => {
   try {
-    const token = request.headers.authorization?.replace('Bearer ', '');
+    const token = req.headers.authorization.split(" ")[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.userData = decoded;
 
-    if (!token) {
-      throw new Error('Token não fornecido');
+    // Caso seja uma rota de acesso, realizar verificação adicional com hardware
+    if (req.path.includes('/acesso')) {
+      const { numeroCartao } = req.body;
+      const cartaoValido = await validarCartao(numeroCartao);
+
+      if (!cartaoValido || !verificarHash(numeroCartao)) {
+        return res.status(403).json({ message: 'Acesso negado. Cartão inválido.' });
+      }
     }
 
-    const decoded = verify(token, process.env.JWT_SECRET);
-    request.usuario = decoded;
+    // Comunicação com hardware (simulado aqui)
+    enviarParaHardware(req.userData, req.body); // Enviar dados para dispositivo
 
-    return;
+    next();
   } catch (error) {
-    reply.code(401).send({
-      error: 'Não autorizado'
-    });
+    return res.status(401).json({ message: 'Autenticação falhou' });
   }
 };
 
-module.exports = { verificarToken };
-
-module.exports = {
-  cartaoController,
-  depositoController,
-  refeicaoController,
-  routes
-};
+// Função que simula o envio de dados ao hardware
+function enviarParaHardware(userData, requestData) {
+  console.log("Enviando dados para hardware:", { userData, requestData });
+  // Lógica de comunicação com hardware (ex: enviar dados via socket)
+}

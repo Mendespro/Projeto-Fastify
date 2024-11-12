@@ -1,7 +1,18 @@
 const fastify = require('fastify')({ logger: true });
-const { PrismaClient } = require('@prisma/client');
+const prisma = require('./config/database');
+const swagger = require('@fastify/swagger');
 
-const prisma = new PrismaClient();
+fastify.register(swagger, {
+  routePrefix: '/documentation',
+  swagger: {
+    info: { title: 'Smart Campus API', version: '1.0.0' },
+    host: 'localhost:3000',
+    schemes: ['http'],
+    consumes: ['application/json'],
+    produces: ['application/json']
+  },
+  exposeRoute: true
+});
 
 fastify.addHook('onClose', async (instance, done) => {
   await prisma.$disconnect();

@@ -1,13 +1,14 @@
 const transacaoService = require('../services/transacaoService');
+const { validarEntradaTransacao } = require('../utils/validators');
 
 const transacaoController = {
-  // Função para registrar o acesso e verificar cartão
   async registrarAcesso(request, reply) {
     try {
       const { numeroCartao, matricula, tipoTransacao } = request.body;
       const valor = tipoTransacao === 'REFEICAO' ? 2.5 : 0;
       
-      // Validação e registro de transação
+      validarEntradaTransacao(numeroCartao, matricula, valor);
+
       const cartao = await transacaoService.validarCartao(numeroCartao, matricula);
       const resultado = await transacaoService.registrarTransacao(cartao.id, tipoTransacao, valor);
 
@@ -17,7 +18,6 @@ const transacaoController = {
     }
   },
 
-  // Função para recarga de saldo
   async realizarRecarga(request, reply) {
     try {
       const { numeroCartao, matricula, valor } = request.body;
@@ -32,7 +32,6 @@ const transacaoController = {
     }
   },
 
-  // Função para bloquear o cartão
   async bloquearCartao(request, reply) {
     try {
       const { numeroCartao, motivo } = request.body;
@@ -47,7 +46,6 @@ const transacaoController = {
     }
   },
 
-  // Função para gerar um relatório de transações
   async gerarRelatorio(request, reply) {
     try {
       const { dataInicio, dataFim } = request.query;

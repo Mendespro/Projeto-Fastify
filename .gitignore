@@ -12,13 +12,5 @@ npm-debug.log*
 # Diretório de build
 dist/
 
-# Arquivos de sistema operacional
-.DS_Store
-Thumbs.db
-
 # Arquivos do Prisma
 prisma/*.db
-
-# Arquivos temporários
-tmp/
-temp/

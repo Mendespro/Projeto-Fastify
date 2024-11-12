@@ -1,4 +1,4 @@
-const fastify = require('fastify')({ logger: true });
+const { fastify } = require('./app');
 
 fastify.register(require('./routes/transacaoRoutes'));
 fastify.register(require('./routes/usuarioRoutes'));

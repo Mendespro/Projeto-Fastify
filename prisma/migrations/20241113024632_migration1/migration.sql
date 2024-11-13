@@ -1,4 +1,7 @@
 -- CreateEnum
+CREATE TYPE "Role" AS ENUM ('ADMIN', 'FUNCIONARIO', 'ALUNO');
+
+-- CreateEnum
 CREATE TYPE "Status" AS ENUM ('ATIVO', 'BLOQUEADO');
 
 -- CreateEnum
@@ -10,8 +13,9 @@ CREATE TABLE "Usuario" (
     "nome" TEXT NOT NULL,
     "matricula" TEXT NOT NULL,
     "email" TEXT,
-    "senha" TEXT NOT NULL,
+    "senha" TEXT,
     "saldo" DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    "role" "Role" NOT NULL DEFAULT 'FUNCIONARIO',
     "fotoUsuario" BYTEA,
     "dataRegistro" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -21,7 +25,6 @@ CREATE TABLE "Usuario" (
 -- CreateTable
 CREATE TABLE "Cartao" (
     "id" SERIAL NOT NULL,
-    "numeroCartao" TEXT NOT NULL,
     "hashCartao" TEXT NOT NULL,
     "status" "Status" NOT NULL DEFAULT 'ATIVO',
     "dataAtivacao" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -67,7 +70,10 @@ CREATE TABLE "BloqueioCartao" (
 CREATE UNIQUE INDEX "Usuario_matricula_key" ON "Usuario"("matricula");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Cartao_numeroCartao_key" ON "Cartao"("numeroCartao");
+CREATE UNIQUE INDEX "Usuario_email_key" ON "Usuario"("email");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Usuario_senha_key" ON "Usuario"("senha");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Cartao_hashCartao_key" ON "Cartao"("hashCartao");

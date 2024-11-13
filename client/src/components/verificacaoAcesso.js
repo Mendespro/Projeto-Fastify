@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { AlertCircle, CheckCircle, XCircle, UserX, Camera } from 'lucide-react';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { Alert, AlertTitle, AlertDescription } from './ui/alert';
 
 const VerificacaoAcesso = () => {
   const [status, setStatus] = useState('waiting'); // waiting, success, failed

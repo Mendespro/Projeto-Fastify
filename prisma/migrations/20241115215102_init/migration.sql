@@ -12,7 +12,7 @@ CREATE TABLE "Usuario" (
     "id" SERIAL NOT NULL,
     "nome" TEXT NOT NULL,
     "matricula" TEXT NOT NULL,
-    "email" TEXT,
+    "email" TEXT NOT NULL,
     "senha" TEXT,
     "saldo" DECIMAL(10,2) NOT NULL DEFAULT 0.00,
     "fotoUsuario" BYTEA,
@@ -68,6 +68,12 @@ CREATE TABLE "BloqueioCartao" (
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Usuario_matricula_key" ON "Usuario"("matricula");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Usuario_email_key" ON "Usuario"("email");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Usuario_senha_key" ON "Usuario"("senha");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Cartao_hashCartao_key" ON "Cartao"("hashCartao");

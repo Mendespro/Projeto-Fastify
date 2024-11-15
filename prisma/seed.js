@@ -3,7 +3,6 @@ const { hashPassword, generateCardHash } = require('../src/utils/hash');
 const prisma = new PrismaClient();
 
 async function main() {
-  // Cria ou atualiza o usuário Administrador
   const admin = await prisma.usuario.upsert({
     where: { matricula: "000000001" },
     update: {},
@@ -16,7 +15,6 @@ async function main() {
     },
   });
 
-  // Cria ou atualiza o usuário Funcionário
   const funcionario = await prisma.usuario.upsert({
     where: { matricula: "000000002" },
     update: {},
@@ -29,7 +27,6 @@ async function main() {
     },
   });
 
-  // Cria ou atualiza o usuário Aluno
   const aluno = await prisma.usuario.upsert({
     where: { matricula: "000000003" },
     update: {},
@@ -41,7 +38,6 @@ async function main() {
     },
   });
 
-  // Cria o cartão RFID para o aluno com hash gerado
   const hashCartaoAluno = generateCardHash("000000003");
   await prisma.cartao.upsert({
     where: { hashCartao: hashCartaoAluno },

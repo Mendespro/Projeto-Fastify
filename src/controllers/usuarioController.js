@@ -5,42 +5,68 @@ const { hashPassword, generateCardHash } = require('../utils/hash');
 const usuarioController = {
   async criarUsuario(request, reply) {
     try {
-      // Lida com `multipart/form-data`
-      const parts = await request.parts(); 
+      console.log("Iniciando o processamento da requisição para criar usuário.");
+
+      // Lê os dados multipart
+      const parts = await request.parts();
+      console.log("Dados recebidos no multipart:", parts);
+
       let nome, matricula, email, role, senha, fotoUsuario;
 
+      // Processando os campos recebidos
       for await (const part of parts) {
+        console.log(`Campo recebido: ${part.fieldname}, Valor: ${part.value || 'Arquivo recebido'}`);
+
         if (part.fieldname === 'nome') nome = part.value;
         if (part.fieldname === 'matricula') matricula = part.value;
         if (part.fieldname === 'email') email = part.value;
         if (part.fieldname === 'role') role = part.value;
         if (part.fieldname === 'senha') senha = part.value;
-        if (part.fieldname === 'fotoUsuario') fotoUsuario = await part.toBuffer();
-        console.log(`Campo: ${part.fieldname}, Valor: ${part.value || 'arquivo (imagem)'}`);
+
+        // Tratamento do campo "fotoUsuario"
+        if (part.fieldname === 'foto' && part.file) {
+          const chunks = [];
+          for await (const chunk of part.file) {
+            chunks.push(chunk);
+          }
+          fotoUsuario = Buffer.concat(chunks);
+          console.log(`Imagem recebida com tamanho: ${fotoUsuario.length} bytes`);
+        } else if (part.fieldname === 'foto') {
+          console.error('Erro: Nenhum arquivo foi enviado no campo "foto".');
+          return reply.code(400).send({ error: 'Nenhum arquivo foi enviado para o campo "foto"' });
+        }
       }
 
-      // Verificação para campos obrigatórios
+      console.log("Campos processados:", { nome, matricula, email, role, senha, fotoUsuario });
+
+      // Verifica se todos os campos obrigatórios foram preenchidos
       if (!nome || !matricula || !email || !role) {
+        console.error('Erro: Dados obrigatórios estão faltando.', { nome, matricula, email, role });
         return reply.code(400).send({ error: 'Dados obrigatórios faltando' });
       }
 
-      // Verifica se já existe um usuário com o mesmo e-mail ou matrícula
+      // Verifica se já existe um usuário com a mesma matrícula ou e-mail
       const usuarioExistente = await prisma.usuario.findFirst({
         where: { OR: [{ matricula }, { email }] }
       });
 
       if (usuarioExistente) {
+        console.error("Erro: Usuário já existente com matrícula ou email:", usuarioExistente);
         return reply.code(400).send({ error: 'Já existe um usuário com esta matrícula ou email' });
       }
 
-      // Define senha para FUNCIONARIO ou ADMIN
+      // Criptografa a senha para FUNCIONÁRIO ou ADMIN
       let hashedPassword = null;
       if (role === 'FUNCIONARIO' || role === 'ADMIN') {
-        if (!senha) return reply.code(400).send({ error: 'Senha é obrigatória para FUNCIONÁRIO e ADMIN' });
+        if (!senha) {
+          console.error('Erro: Senha obrigatória para FUNCIONÁRIO ou ADMIN.');
+          return reply.code(400).send({ error: 'Senha é obrigatória para FUNCIONÁRIO e ADMIN' });
+        }
         hashedPassword = hashPassword(senha);
+        console.log('Senha criptografada gerada.');
       }
 
-      // Cria o usuário
+      // Criação do usuário no banco
       const novoUsuario = await prisma.usuario.create({
         data: {
           nome,
@@ -49,26 +75,36 @@ const usuarioController = {
           senha: hashedPassword,
           role,
           fotoUsuario,
-        }
+        },
       });
+      console.log("Usuário criado no banco de dados:", novoUsuario);
 
       // Gera o cartão automaticamente para ALUNO
       if (role === 'ALUNO') {
         const hashCartao = generateCardHash(matricula);
+        console.log(`Hash do cartão gerado para o aluno: ${hashCartao}`);
 
         await prisma.cartao.create({
           data: {
-            hashCartao: hashCartao,
+            hashCartao,
             status: 'ATIVO',
-            idUsuario: novoUsuario.id
-          }
+            idUsuario: novoUsuario.id,
+          },
         });
+        console.log("Cartão criado para o aluno.");
       }
 
+      console.log('Usuário criado com sucesso:', novoUsuario);
       return reply.code(201).send({ message: 'Usuário criado com sucesso!', usuario: novoUsuario });
     } catch (error) {
-      console.error("Erro ao criar usuário:", error);  // Exibe o erro completo no console
-      reply.code(500).send({ error: error.message || "Erro ao criar usuário" });
+      console.error('Erro ao criar usuário:', error);
+
+      // Tratamento de erro específico para chave única
+      if (error.code === 'P2002') {
+        return reply.code(400).send({ error: 'Matrícula ou e-mail já cadastrados no sistema.' });
+      }
+
+      return reply.code(500).send({ error: error.message || 'Erro ao criar usuário' });
     }
   },
 

@@ -1,6 +1,14 @@
 const fastify = require('fastify')({ logger: true });
 const prisma = require('./config/database');
 const swagger = require('@fastify/swagger');
+const cors = require('@fastify/cors'); // Adiciona o CORS
+
+// Configura o CORS
+fastify.register(cors, {
+  origin: true, // Permite qualquer origem. Para segurança, especifique o domínio do front-end
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Métodos permitidos
+  allowedHeaders: ['Content-Type', 'Authorization'], // Cabeçalhos permitidos
+});
 
 fastify.register(swagger, {
   routePrefix: '/documentation',

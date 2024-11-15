@@ -15,9 +15,9 @@ CREATE TABLE "Usuario" (
     "email" TEXT,
     "senha" TEXT,
     "saldo" DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-    "role" "Role" NOT NULL DEFAULT 'FUNCIONARIO',
     "fotoUsuario" BYTEA,
     "dataRegistro" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "role" "Role" NOT NULL,
 
     CONSTRAINT "Usuario_pkey" PRIMARY KEY ("id")
 );
@@ -68,12 +68,6 @@ CREATE TABLE "BloqueioCartao" (
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Usuario_matricula_key" ON "Usuario"("matricula");
-
--- CreateIndex
-CREATE UNIQUE INDEX "Usuario_email_key" ON "Usuario"("email");
-
--- CreateIndex
-CREATE UNIQUE INDEX "Usuario_senha_key" ON "Usuario"("senha");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Cartao_hashCartao_key" ON "Cartao"("hashCartao");

@@ -1,45 +1,59 @@
 const { PrismaClient } = require('@prisma/client');
-const bcrypt = require('bcryptjs');
-
+const { hashPassword, generateCardHash } = require('../src/utils/hash');
 const prisma = new PrismaClient();
 
 async function main() {
-  const adminExists = await prisma.usuario.findUnique({
-    where: { email: 'admin@exemplo.com' },
+  // Cria ou atualiza o usuário Administrador
+  const admin = await prisma.usuario.upsert({
+    where: { matricula: "000000001" },
+    update: {},
+    create: {
+      nome: "Administrador",
+      matricula: "000000001",
+      email: "admin@smartcampus.com",
+      senha: hashPassword("admin123"),
+      role: "ADMIN",
+    },
   });
 
-  if (!adminExists) {
-    const hashedPassword = await bcrypt.hash('admin123', 10); // Senha padrão para ADMIN
-
-    await prisma.usuario.create({
-      data: {
-        nome: 'Administrador',
-        email: 'admin@exemplo.com',
-        senha: hashedPassword,
-        role: 'ADMIN',
-        saldo: 0,
-        matricula: 'ADM001'
-      },
-    });
-    console.log('Administrador padrão criado!');
-  }
-
-  const alunoExists = await prisma.usuario.findUnique({
-    where: { email: 'aluno@exemplo.com' },
+  // Cria ou atualiza o usuário Funcionário
+  const funcionario = await prisma.usuario.upsert({
+    where: { matricula: "000000002" },
+    update: {},
+    create: {
+      nome: "Funcionário",
+      matricula: "000000002",
+      email: "funcionario@smartcampus.com",
+      senha: hashPassword("func123"),
+      role: "FUNCIONARIO",
+    },
   });
 
-  if (!alunoExists) {
-    await prisma.usuario.create({
-      data: {
-        nome: 'Aluno Exemplo',
-        email: 'aluno@exemplo.com',
-        role: 'ALUNO',
-        saldo: 0,
-        matricula: 'ALN001'
-      },
-    });
-    console.log('Aluno padrão criado sem senha!');
-  }
+  // Cria ou atualiza o usuário Aluno
+  const aluno = await prisma.usuario.upsert({
+    where: { matricula: "000000003" },
+    update: {},
+    create: {
+      nome: "Aluno Exemplo",
+      matricula: "000000003",
+      email: "aluno@smartcampus.com",
+      role: "ALUNO",
+    },
+  });
+
+  // Cria o cartão RFID para o aluno com hash gerado
+  const hashCartaoAluno = generateCardHash("000000003");
+  await prisma.cartao.upsert({
+    where: { hashCartao: hashCartaoAluno },
+    update: {},
+    create: {
+      hashCartao: hashCartaoAluno,
+      status: "ATIVO",
+      idUsuario: aluno.id,
+    },
+  });
+
+  console.log("Seed executado com sucesso!");
 }
 
 main()

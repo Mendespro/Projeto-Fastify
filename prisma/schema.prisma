@@ -8,18 +8,18 @@ datasource db {
 }
 
 model Usuario {
-  id            Int       @id @default(autoincrement())
-  nome          String
-  matricula     String    @unique
-  email         String?   @unique
-  senha         String?   @unique
-  saldo         Decimal   @default(0.00) @db.Decimal(10, 2)
-  role          Role      @default(FUNCIONARIO)
-  fotoUsuario   Bytes?
-  dataRegistro  DateTime  @default(now())
+  id           Int           @id @default(autoincrement())
+  nome         String
+  matricula    String        @unique
+  email        String?
+  senha        String?
+  saldo        Decimal       @default(0.00) @db.Decimal(10, 2)
+  fotoUsuario  Bytes?
+  dataRegistro DateTime      @default(now())
+  role         Role
 
-  cartoes       Cartao[]
-  historicos    HistoricoTransacao[]
+  cartoes      Cartao[]
+  historicos   HistoricoTransacao[]
 }
 
 model Cartao {

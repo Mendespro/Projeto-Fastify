@@ -10,8 +10,8 @@ fastify.get('/', async (request, reply) => {
 
 const start = async () => {
   try {
-    await fastify.listen({ port: 3000 });
-    console.log('Server is running on http://127.0.0.1:3000');
+    await fastify.listen({ port: 3001 });
+    console.log('Server is running on http://127.0.0.1:3001');
   } catch (err) {
     fastify.log.error(err);
     process.exit(1);

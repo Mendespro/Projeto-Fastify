@@ -2,8 +2,8 @@ const prisma = require('../config/database');
 const { generateCardHash } = require('../utils/hash');
 
 const transacaoService = {
-  async validarCartao(numeroCartao, matricula) {
-    const hashAtual = generateCardHash(numeroCartao, matricula);
+  async validarCartao(matricula) {
+    const hashAtual = generateCardHash(matricula);
     const cartao = await prisma.cartao.findFirst({
       where: { hashCartao: hashAtual, status: 'ATIVO' },
       include: { usuario: true }

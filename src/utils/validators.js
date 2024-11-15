@@ -1,5 +1,5 @@
-const validarEntradaTransacao = (numeroCartao, matricula, valor) => {
-    if (!numeroCartao || !matricula || typeof valor !== 'number' || valor < 0) {
+const validarEntradaTransacao = (matricula, valor) => {
+    if (!matricula || typeof valor !== 'number' || valor < 0) {
       throw new Error('Dados inválidos para transação');
     }
   };

@@ -6,19 +6,21 @@ import Home from './components/Home';
 import BloquearDesbloquear from './components/BloquearDesbloquear';
 import Recarga from './components/Recarga';
 import Relatorio from './components/Relatorio';
+import PrivateRoute from './utils/PrivateRoute';
 
 function App() {
-  const isAuthenticated = !!localStorage.getItem('token');
-
   return (
     <Router>
       <Routes>
         <Route path="/login" element={<Login />} />
-        <Route path="/" element={isAuthenticated ? <Home /> : <Navigate to="/login" />} />
-        <Route path="/cadastro" element={<Cadastro />} />
-        <Route path="/bloquear-desbloquear" element={<BloquearDesbloquear />} />
-        <Route path="/recarga" element={<Recarga />} />
-        <Route path="/relatorio" element={<Relatorio />} />
+        <Route path="/" element={<PrivateRoute />}>
+          <Route path="/" element={<Home />} />
+          <Route path="/cadastro" element={<Cadastro />} />
+          <Route path="/bloquear-desbloquear" element={<BloquearDesbloquear />} />
+          <Route path="/recarga" element={<Recarga />} />
+          <Route path="/relatorio" element={<Relatorio />} />
+        </Route>
+        <Route path="*" element={<Navigate to="/" />} /> {/* Redireciona para home se não autenticado */}
       </Routes>
     </Router>
   );

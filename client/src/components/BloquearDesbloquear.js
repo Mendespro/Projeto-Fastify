@@ -8,17 +8,20 @@ function BloquearDesbloquear() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log('Dados para envio:', { idCartao, motivo });
+  
     try {
-      if (isBloquear) {
-        await api.post('/usuarios/bloquear', { idCartao, motivo });
-        alert('Cartão bloqueado com sucesso!');
-      } else {
-        await api.post('/usuarios/desbloquear', { idCartao });
-        alert('Cartão desbloqueado com sucesso!');
-      }
+      const endpoint = isBloquear ? '/usuarios/bloquear' : '/usuarios/desbloquear';
+      const data = isBloquear ? { idCartao, motivo } : { idCartao };
+      console.log('Enviando solicitação para:', endpoint);
+  
+      const response = await api.post(endpoint, data);
+      console.log('Resposta recebida:', response.data);
+  
+      alert(`${isBloquear ? 'Bloqueio' : 'Desbloqueio'} realizado com sucesso!`);
     } catch (error) {
       console.error('Erro ao alterar status do cartão:', error);
-      alert('Erro ao alterar status do cartão');
+      alert(`Erro ao alterar status do cartão: ${error.response ? error.response.data.error : error.message}`);
     }
   };
 

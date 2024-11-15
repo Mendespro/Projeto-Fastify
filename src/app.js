@@ -1,13 +1,15 @@
 const fastify = require('fastify')({ logger: true });
 const prisma = require('./config/database');
 const swagger = require('@fastify/swagger');
-const cors = require('@fastify/cors'); // Adiciona o CORS
+const cors = require('@fastify/cors'); 
+const multipart = require('@fastify/multipart'); 
 
-// Configura o CORS
+fastify.register(multipart);
+
 fastify.register(cors, {
-  origin: true, // Permite qualquer origem. Para segurança, especifique o domínio do front-end
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Métodos permitidos
-  allowedHeaders: ['Content-Type', 'Authorization'], // Cabeçalhos permitidos
+  origin: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 });
 
 fastify.register(swagger, {
@@ -16,7 +18,7 @@ fastify.register(swagger, {
     info: { title: 'Smart Campus API', version: '1.0.0' },
     host: 'localhost:3000',
     schemes: ['http'],
-    consumes: ['application/json'],
+    consumes: ['application/json', 'multipart/form-data'],
     produces: ['application/json']
   },
   exposeRoute: true

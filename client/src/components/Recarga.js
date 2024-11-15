@@ -4,15 +4,23 @@ import api from '../api/api';
 function Recarga() {
   const [idCartao, setIdCartao] = useState('');
   const [valor, setValor] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleRecarga = async (e) => {
     e.preventDefault();
+    setLoading(true);
+
     try {
-      await api.post('/transacao/recarga', { idCartao, valor: parseFloat(valor) });
+      const response = await api.post('/usuarios/recarregar', {
+        idCartao,
+        valor: parseFloat(valor)  // Converte para número antes de enviar
+      });
       alert('Recarga realizada com sucesso!');
     } catch (error) {
       console.error('Erro ao recarregar cartão:', error);
       alert('Erro ao recarregar cartão');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -32,7 +40,9 @@ function Recarga() {
         placeholder="Valor da Recarga" 
         required 
       />
-      <button type="submit">Recarregar Cartão</button>
+      <button type="submit" disabled={loading}>
+        {loading ? 'Processando...' : 'Recarregar Cartão'}
+      </button>
     </form>
   );
 }

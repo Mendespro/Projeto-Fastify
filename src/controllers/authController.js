@@ -30,7 +30,7 @@ const authController = {
       reply.status(200).send({ message: 'Login bem-sucedido', token });
     } catch (error) {
       console.error("Erro no login:", error);
-      reply.status(500).send({ error: "Erro ao fazer login" });
+      reply.status(500).send({ error: "Erro ao fazer login" + error.message });
     }
   }
 };

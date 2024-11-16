@@ -5,7 +5,7 @@ CREATE TYPE "Role" AS ENUM ('ADMIN', 'FUNCIONARIO', 'ALUNO');
 CREATE TYPE "Status" AS ENUM ('ATIVO', 'BLOQUEADO');
 
 -- CreateEnum
-CREATE TYPE "TipoTransacao" AS ENUM ('DEPOSITO', 'REFEICAO');
+CREATE TYPE "TipoTransacao" AS ENUM ('DEPOSITO', 'LOGIN', 'CADASTRO', 'BLOQUEIO', 'DESBLOQUEIO');
 
 -- CreateTable
 CREATE TABLE "Usuario" (
@@ -40,6 +40,7 @@ CREATE TABLE "HistoricoTransacao" (
     "valor" DECIMAL(10,2) NOT NULL,
     "dataTransacao" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "idUsuario" INTEGER NOT NULL,
+    "responsavelId" INTEGER,
 
     CONSTRAINT "HistoricoTransacao_pkey" PRIMARY KEY ("id")
 );
@@ -83,6 +84,9 @@ ALTER TABLE "Cartao" ADD CONSTRAINT "Cartao_idUsuario_fkey" FOREIGN KEY ("idUsua
 
 -- AddForeignKey
 ALTER TABLE "HistoricoTransacao" ADD CONSTRAINT "HistoricoTransacao_idUsuario_fkey" FOREIGN KEY ("idUsuario") REFERENCES "Usuario"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "HistoricoTransacao" ADD CONSTRAINT "HistoricoTransacao_responsavelId_fkey" FOREIGN KEY ("responsavelId") REFERENCES "Usuario"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Acesso" ADD CONSTRAINT "Acesso_idCartao_fkey" FOREIGN KEY ("idCartao") REFERENCES "Cartao"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

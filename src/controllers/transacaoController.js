@@ -1,5 +1,8 @@
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 const transacaoService = require('../services/transacaoService');
 const { validarEntradaTransacao } = require('../utils/validators');
+const { generatePdf } = require('../utils/pdfGenerator');
 
 const transacaoController = {
   async registrarAcesso(request, reply) {
@@ -48,16 +51,82 @@ const transacaoController = {
 
   async gerarRelatorio(request, reply) {
     try {
-      const { dataInicio, dataFim } = request.query;
-      
-      // Geração do relatório com base no intervalo fornecido
-      const relatorio = await transacaoService.gerarRelatorio(dataInicio, dataFim);
+      const { dataInicio, dataFim, tipoTransacao } = request.query;
+
+      if (!dataInicio || !dataFim) {
+        return reply.code(400).send({ message: 'Datas de início e fim são obrigatórias.' });
+      }
+
+      const filtros = {
+        dataTransacao: {
+          gte: new Date(dataInicio),
+          lte: new Date(dataFim),
+        },
+      };
+
+      if (tipoTransacao) {
+        filtros.tipoTransacao = tipoTransacao;
+      }
+
+      const relatorio = await prisma.historicoTransacao.findMany({
+        where: filtros,
+        include: {
+          usuario: { select: { nome: true, matricula: true } },
+        },
+        orderBy: { dataTransacao: 'desc' },
+      });
+
+      if (!relatorio.length) {
+        return reply.code(404).send({ message: 'Nenhum dado encontrado para o filtro fornecido.' });
+      }
 
       return reply.code(200).send({ relatorio });
     } catch (error) {
-      return reply.code(500).send({ error: error.message });
+      console.error('Erro ao gerar relatório:', error);
+      return reply.code(500).send({ message: 'Erro ao gerar relatório.' });
     }
-  }
+  },
+
+  async gerarRelatorioPdf(request, reply) {
+    try {
+      const { dataInicio, dataFim, tipoTransacao } = request.query;
+
+      if (!dataInicio || !dataFim) {
+        return reply.code(400).send({ message: 'Datas de início e fim são obrigatórias.' });
+      }
+
+      const filtros = {
+        dataTransacao: {
+          gte: new Date(dataInicio),
+          lte: new Date(dataFim),
+        },
+      };
+
+      if (tipoTransacao) {
+        filtros.tipoTransacao = tipoTransacao;
+      }
+
+      const relatorio = await prisma.historicoTransacao.findMany({
+        where: filtros,
+        include: {
+          usuario: { select: { nome: true, matricula: true } },
+        },
+        orderBy: { dataTransacao: 'desc' },
+      });
+
+      if (!relatorio.length) {
+        return reply.code(404).send({ message: 'Nenhum dado encontrado para o filtro fornecido.' });
+      }
+
+      const pdfBuffer = await generatePdf(relatorio, 'Relatório de Transações');
+      reply.header('Content-Type', 'application/pdf');
+      reply.header('Content-Disposition', 'attachment; filename="relatorio.pdf"');
+      return reply.send(pdfBuffer);
+    } catch (error) {
+      console.error('Erro ao gerar PDF:', error);
+      return reply.code(500).send({ message: 'Erro ao gerar PDF.' });
+    }
+  },
 };
 
 module.exports = transacaoController;

@@ -1,30 +1,29 @@
+const prisma = require('../config/database');
+const { hashPassword, generateCardHash } = require('../utils/hash');
+
 const usuarioService = {
-  async criarUsuario(dados) {
-    try {
-      const { nome, matricula, email, senha, fotoUsuario } = dados;
+  async criarUsuario(usuarioData) {
+    const hashedPassword = usuarioData.role !== 'ALUNO' ? hashPassword(usuarioData.senha) : null;
 
-      const usuarioExistente = await prisma.usuario.findUnique({
-        where: { matricula },
+    const novoUsuario = await prisma.usuario.create({
+      data: {
+        nome: usuarioData.nome,
+        matricula: usuarioData.matricula,
+        email: usuarioData.email,
+        senha: hashedPassword,
+        fotoUsuario: usuarioData.fotoUsuario || null,
+        role: usuarioData.role,
+      },
+    });
+
+    if (usuarioData.role === 'ALUNO') {
+      const hashCartao = generateCardHash(usuarioData.matricula);
+      await prisma.cartao.create({
+        data: { hashCartao, status: 'ATIVO', idUsuario: novoUsuario.id },
       });
-
-      if (usuarioExistente) {
-        throw new Error('Já existe um usuário com esta matrícula');
-      }
-
-      const usuario = await prisma.usuario.create({
-        data: {
-          nome,
-          matricula,
-          email,
-          senha, // Lembre-se de adicionar hash na senha
-          fotoUsuario,
-        },
-      });
-
-      return usuario;
-    } catch (error) {
-      throw new Error(`Erro ao criar usuário: ${error.message}`);
     }
+
+    return novoUsuario;
   },
 
   async atualizarUsuario(matricula, dados) {

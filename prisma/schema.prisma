@@ -8,57 +8,58 @@ datasource db {
 }
 
 model Usuario {
-  id           Int         @id @default(autoincrement())
-  nome         String
-  matricula    String      @unique
-  email        String      @unique
-  senha        String?     @unique
-  saldo        Decimal     @default(0.00) @db.Decimal(10, 2)
-  fotoUsuario  Bytes?
-  dataRegistro DateTime    @default(now())
-  role         Role
-
-  cartoes      Cartao[]
-  historicos   HistoricoTransacao[]
+  id             Int                  @id @default(autoincrement())
+  nome           String
+  matricula      String               @unique
+  email          String               @unique
+  senha          String?              @unique
+  saldo          Decimal              @default(0.00) @db.Decimal(10, 2)
+  fotoUsuario    Bytes?
+  dataRegistro   DateTime             @default(now())
+  role           Role
+  cartoes        Cartao[]
+  historicos     HistoricoTransacao[] @relation("UsuarioTransacao")
+  responsavelPor HistoricoTransacao[] @relation("ResponsavelTransacao")
 }
 
 model Cartao {
-  id            Int        @id @default(autoincrement())
-  hashCartao    String     @unique 
-  status        Status     @default(ATIVO)
-  dataAtivacao  DateTime   @default(now())
-  usuario       Usuario    @relation(fields: [idUsuario], references: [id])
-  idUsuario     Int           
-
-  acessos       Acesso[]
-  bloqueios     BloqueioCartao[]
+  id           Int              @id @default(autoincrement())
+  hashCartao   String           @unique
+  status       Status           @default(ATIVO)
+  dataAtivacao DateTime         @default(now())
+  idUsuario    Int
+  acessos      Acesso[]
+  bloqueios    BloqueioCartao[]
+  usuario      Usuario          @relation(fields: [idUsuario], references: [id])
 }
 
 model HistoricoTransacao {
-  id            Int         @id @default(autoincrement())
+  id            Int           @id @default(autoincrement())
   tipoTransacao TipoTransacao
-  valor         Decimal     @db.Decimal(10, 2)
-  dataTransacao DateTime    @default(now())
-  usuario       Usuario     @relation(fields: [idUsuario], references: [id])
+  valor         Decimal       @db.Decimal(10, 2)
+  dataTransacao DateTime      @default(now())
   idUsuario     Int
+  responsavelId Int?
+  usuario       Usuario       @relation("UsuarioTransacao", fields: [idUsuario], references: [id])
+  responsavel   Usuario?      @relation("ResponsavelTransacao", fields: [responsavelId], references: [id])
 }
 
 model Acesso {
-  id          Int         @id @default(autoincrement())
-  dataAcesso  DateTime    @default(now())
-  permitido   Boolean     @default(true)
-  cartao      Cartao      @relation(fields: [idCartao], references: [id])
-  idCartao    Int
-  observacao  String?
+  id         Int      @id @default(autoincrement())
+  dataAcesso DateTime @default(now())
+  permitido  Boolean  @default(true)
+  idCartao   Int
+  observacao String?
+  cartao     Cartao   @relation(fields: [idCartao], references: [id])
 }
 
 model BloqueioCartao {
-  id              Int      @id @default(autoincrement())
-  motivoBloqueio  String?
-  dataBloqueio    DateTime @default(now())
-  cartao          Cartao   @relation(fields: [idCartao], references: [id])
-  idCartao        Int
-  temporario      Boolean  @default(false)
+  id             Int      @id @default(autoincrement())
+  motivoBloqueio String?
+  dataBloqueio   DateTime @default(now())
+  idCartao       Int
+  temporario     Boolean  @default(false)
+  cartao         Cartao   @relation(fields: [idCartao], references: [id])
 }
 
 enum Role {
@@ -74,5 +75,8 @@ enum Status {
 
 enum TipoTransacao {
   DEPOSITO
-  REFEICAO
+  LOGIN
+  CADASTRO
+  BLOQUEIO
+  DESBLOQUEIO
 }

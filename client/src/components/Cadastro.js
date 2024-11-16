@@ -2,93 +2,95 @@ import React, { useState } from 'react';
 import api from '../api/api';
 
 function Cadastro() {
-  const [nome, setNome] = useState('');
-  const [matricula, setMatricula] = useState('');
-  const [email, setEmail] = useState('');
-  const [role, setRole] = useState('ALUNO');
-  const [senha, setSenha] = useState('');
-  const [foto, setFoto] = useState(null);
-  const [isSubmitting, setIsSubmitting] = useState(false); // Evitar múltiplos envios
+  const [form, setForm] = useState({
+    nome: '',
+    matricula: '',
+    email: '',
+    role: 'ALUNO',
+    senha: '',
+    foto: null,
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleCadastro = async (e) => {
+  const handleChange = (e) => {
+    const { name, value, files } = e.target;
+    setForm({
+      ...form,
+      [name]: files ? files[0] : value,
+    });
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return; // Evita múltiplos envios enquanto a requisição está pendente
 
-    if (isSubmitting) return; // Evita envios duplicados
-
-    setIsSubmitting(true); // Bloqueia o botão enquanto o envio é processado
-
-    const formData = new FormData();
-    formData.append('nome', nome);
-    formData.append('matricula', matricula);
-    formData.append('email', email);
-    formData.append('role', role);
-    if (role !== 'ALUNO') {
-      formData.append('senha', senha);
-    }
-    if (foto) {
-      formData.append('foto', foto);
-    }
+    setIsSubmitting(true);
 
     try {
-      await api.post('/usuarios', formData, {
+      const formData = new FormData();
+      Object.keys(form).forEach((key) => formData.append(key, form[key]));
+
+      const { data } = await api.post('/usuarios', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-      alert('Usuário cadastrado com sucesso!');
-      // Limpar campos após o sucesso
-      setNome('');
-      setMatricula('');
-      setEmail('');
-      setRole('ALUNO');
-      setSenha('');
-      setFoto(null);
+
+      if (data.message) {
+        alert(data.message);
+        setForm({ nome: '', matricula: '', email: '', role: 'ALUNO', senha: '', foto: null }); // Reset do formulário
+      } else {
+        throw new Error(data.error || 'Erro ao processar cadastro.');
+      }
     } catch (error) {
-      console.error('Erro ao cadastrar usuário:', error.response?.data || error.message);
-      alert('Erro ao cadastrar usuário');
+      alert(error.response?.data?.error || error.message || 'Erro ao cadastrar usuário.');
     } finally {
-      setIsSubmitting(false); // Libera o botão para novas submissões
+      setIsSubmitting(false); // Permite novos envios
     }
   };
 
   return (
-    <form onSubmit={handleCadastro}>
+    <form onSubmit={handleSubmit}>
       <input
         type="text"
-        value={nome}
-        onChange={(e) => setNome(e.target.value)}
+        name="nome"
         placeholder="Nome"
+        value={form.nome}
+        onChange={handleChange}
         required
       />
       <input
         type="text"
-        value={matricula}
-        onChange={(e) => setMatricula(e.target.value)}
+        name="matricula"
         placeholder="Matrícula"
+        value={form.matricula}
+        onChange={handleChange}
         required
       />
       <input
         type="email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
+        name="email"
         placeholder="Email"
+        value={form.email}
+        onChange={handleChange}
         required
       />
-      <select value={role} onChange={(e) => setRole(e.target.value)}>
+      <select name="role" value={form.role} onChange={handleChange}>
         <option value="ALUNO">Aluno</option>
         <option value="FUNCIONARIO">Funcionário</option>
         <option value="ADMIN">Administrador</option>
       </select>
-      {(role === 'FUNCIONARIO' || role === 'ADMIN') && (
+      {form.role !== 'ALUNO' && (
         <input
           type="password"
-          value={senha}
-          onChange={(e) => setSenha(e.target.value)}
+          name="senha"
           placeholder="Senha"
+          value={form.senha}
+          onChange={handleChange}
           required
         />
       )}
-      <input type="file" onChange={(e) => setFoto(e.target.files[0])} />
+      <input type="file" name="foto" onChange={handleChange} />
       <button type="submit" disabled={isSubmitting}>
-        {isSubmitting ? 'Enviando...' : 'Cadastrar'}
+        {isSubmitting ? 'Cadastrando...' : 'Cadastrar'}
       </button>
     </form>
   );

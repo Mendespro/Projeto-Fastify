@@ -25,11 +25,11 @@ const usuarioController = {
       });
 
       if (usuarioExistente) {
-        return reply.code(400).send({ error: 'Matrícula ou email já cadastrados.' });
+        return reply.code(400).send({ error: 'Matrícula ou email já cadastrados.' }); // Interrompe aqui
       }
 
-      // Realiza a criação do usuário com transação
-      const novoUsuario = await prisma.$transaction(async (tx) => {
+      // Criação com transação
+      await prisma.$transaction(async (tx) => {
         const senha = usuarioData.role !== 'ALUNO' ? hashPassword(usuarioData.senha) : null;
 
         const usuarioCriado = await tx.usuario.create({
@@ -43,7 +43,6 @@ const usuarioController = {
           },
         });
 
-        // Criação do cartão para alunos
         if (usuarioData.role === 'ALUNO') {
           const hashCartao = generateCardHash(usuarioData.matricula);
           await tx.cartao.create({
@@ -54,11 +53,9 @@ const usuarioController = {
             },
           });
         }
-
-        return usuarioCriado;
       });
 
-      reply.code(201).send({ message: 'Usuário cadastrado com sucesso!' });
+      return reply.code(201).send({ message: 'Usuário cadastrado com sucesso!' }); // Resposta final
     } catch (error) {
       console.error('Erro ao cadastrar usuário:', error);
 
@@ -66,7 +63,7 @@ const usuarioController = {
         return reply.code(400).send({ error: 'Matrícula ou email já estão em uso.' });
       }
 
-      reply.code(500).send({ error: 'Erro ao processar cadastro.' });
+      return reply.code(500).send({ error: 'Erro ao processar cadastro.' });
     }
   },
 

@@ -22,9 +22,15 @@ function Cadastro() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (isSubmitting) return; // Evita múltiplos envios enquanto a requisição está pendente
+
+    // Log para verificar se o botão foi clicado enquanto `isSubmitting` é true
+    if (isSubmitting) {
+      console.log('Requisição bloqueada: já em andamento.');
+      return; // Evita múltiplos envios enquanto a requisição está pendente
+    }
 
     setIsSubmitting(true);
+    console.log('Iniciando requisição de cadastro...');
 
     try {
       const formData = new FormData();
@@ -36,14 +42,17 @@ function Cadastro() {
 
       if (data.message) {
         alert(data.message);
+        console.log('Requisição concluída com sucesso:', data.message);
         setForm({ nome: '', matricula: '', email: '', role: 'ALUNO', senha: '', foto: null }); // Reset do formulário
       } else {
         throw new Error(data.error || 'Erro ao processar cadastro.');
       }
     } catch (error) {
+      console.error('Erro durante a requisição:', error);
       alert(error.response?.data?.error || error.message || 'Erro ao cadastrar usuário.');
     } finally {
       setIsSubmitting(false); // Permite novos envios
+      console.log('Requisição finalizada.');
     }
   };
 

@@ -67,6 +67,8 @@ const transacaoController = {
       if (tipoTransacao) {
         filtros.tipoTransacao = tipoTransacao;
       }
+      
+      console.log('Filtros aplicados:', filtros);
 
       const relatorio = await prisma.historicoTransacao.findMany({
         where: filtros,
@@ -75,11 +77,11 @@ const transacaoController = {
         },
         orderBy: { dataTransacao: 'desc' },
       });
-
+      
       if (!relatorio.length) {
         return reply.code(404).send({ message: 'Nenhum dado encontrado para o filtro fornecido.' });
       }
-
+      console.log('Dados do relatório:', relatorio);
       return reply.code(200).send({ relatorio });
     } catch (error) {
       console.error('Erro ao gerar relatório:', error);
@@ -90,43 +92,46 @@ const transacaoController = {
   async gerarRelatorioPdf(request, reply) {
     try {
       const { dataInicio, dataFim, tipoTransacao } = request.query;
-
+  
       if (!dataInicio || !dataFim) {
         return reply.code(400).send({ message: 'Datas de início e fim são obrigatórias.' });
       }
-
+  
       const filtros = {
         dataTransacao: {
-          gte: new Date(dataInicio),
-          lte: new Date(dataFim),
+          gte: new Date(`${dataInicio}T00:00:00`),
+          lte: new Date(`${dataFim}T23:59:59`),
         },
       };
-
+  
       if (tipoTransacao) {
         filtros.tipoTransacao = tipoTransacao;
       }
-
+  
       const relatorio = await prisma.historicoTransacao.findMany({
         where: filtros,
         include: {
           usuario: { select: { nome: true, matricula: true } },
+          responsavel: { select: { nome: true } },
         },
         orderBy: { dataTransacao: 'desc' },
       });
-
+  
       if (!relatorio.length) {
         return reply.code(404).send({ message: 'Nenhum dado encontrado para o filtro fornecido.' });
       }
-
+  
       const pdfBuffer = await generatePdf(relatorio, 'Relatório de Transações');
-      reply.header('Content-Type', 'application/pdf');
-      reply.header('Content-Disposition', 'attachment; filename="relatorio.pdf"');
+      
+      reply
+        .header('Content-Type', 'application/pdf')
+        .header('Content-Disposition', 'attachment; filename="relatorio.pdf"');
       return reply.send(pdfBuffer);
     } catch (error) {
       console.error('Erro ao gerar PDF:', error);
       return reply.code(500).send({ message: 'Erro ao gerar PDF.' });
     }
-  },
+  }
 };
 
 module.exports = transacaoController;

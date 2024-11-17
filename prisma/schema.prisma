@@ -79,4 +79,5 @@ enum TipoTransacao {
   CADASTRO
   BLOQUEIO
   DESBLOQUEIO
+  REFEICAO
 }

@@ -15,23 +15,23 @@ const usuarioController = {
           usuarioData[part.fieldname] = part.value;
         }
       }
-
+  
       // Valida entrada
       validarEntradaUsuario(usuarioData.nome, usuarioData.matricula, usuarioData.senha, usuarioData.role);
-
+  
       // Verifica duplicidade
       const usuarioExistente = await prisma.usuario.findFirst({
         where: { OR: [{ matricula: usuarioData.matricula }, { email: usuarioData.email }] },
       });
-
+  
       if (usuarioExistente) {
-        return reply.code(400).send({ error: 'Matrícula ou email já cadastrados.' }); // Interrompe aqui
+        return reply.code(400).send({ error: 'Matrícula ou email já cadastrados.' });
       }
-
+  
       // Criação com transação
       await prisma.$transaction(async (tx) => {
         const senha = usuarioData.role !== 'ALUNO' ? hashPassword(usuarioData.senha) : null;
-
+  
         const usuarioCriado = await tx.usuario.create({
           data: {
             nome: usuarioData.nome,
@@ -42,7 +42,7 @@ const usuarioController = {
             role: usuarioData.role,
           },
         });
-
+  
         if (usuarioData.role === 'ALUNO') {
           const hashCartao = generateCardHash(usuarioData.matricula);
           await tx.cartao.create({
@@ -53,16 +53,26 @@ const usuarioController = {
             },
           });
         }
+  
+        // **Registro no histórico**
+        await tx.historicoTransacao.create({
+          data: {
+            tipoTransacao: 'CADASTRO',
+            idUsuario: usuarioCriado.id, // Usuário que foi criado
+            responsavelId: request.userData.id, // Usuário responsável (vem do token JWT)
+            valor: 0, // Sem valor associado ao cadastro
+          },
+        });
       });
-
-      return reply.code(201).send({ message: 'Usuário cadastrado com sucesso!' }); // Resposta final
+  
+      return reply.code(201).send({ message: 'Usuário cadastrado com sucesso!' });
     } catch (error) {
       console.error('Erro ao cadastrar usuário:', error);
-
+  
       if (error.code === 'P2002') {
         return reply.code(400).send({ error: 'Matrícula ou email já estão em uso.' });
       }
-
+  
       return reply.code(500).send({ error: 'Erro ao processar cadastro.' });
     }
   },
@@ -97,7 +107,7 @@ const usuarioController = {
   
       const cartao = await prisma.cartao.findUnique({
         where: { id: parseInt(idCartao, 10) },
-        include: { usuario: true }
+        include: { usuario: true },
       });
   
       if (!cartao) {
@@ -105,12 +115,25 @@ const usuarioController = {
       }
   
       const novoSaldo = cartao.usuario.saldo + valor;
-      await prisma.usuario.update({
-        where: { id: cartao.usuario.id },
-        data: { saldo: novoSaldo }
+  
+      await prisma.$transaction(async (tx) => {
+        // Atualiza o saldo do usuário
+        await tx.usuario.update({
+          where: { id: cartao.usuario.id },
+          data: { saldo: novoSaldo },
+        });
+  
+        // Registra a transação no histórico
+        await tx.historicoTransacao.create({
+          data: {
+            tipoTransacao: 'DEPOSITO',
+            valor,
+            idUsuario: cartao.usuario.id,
+            responsavelId: request.userData.id, // Responsável pela operação
+          },
+        });
       });
   
-      console.log('Recarga realizada com sucesso');
       return reply.code(200).send({ message: 'Recarga realizada com sucesso', saldo: novoSaldo });
     } catch (error) {
       console.error('Erro ao recarregar cartão:', error);
@@ -142,7 +165,16 @@ const usuarioController = {
         where: { matricula: matricula },
         data: { saldo: novoSaldo }
       });
-  
+      
+      const transacao = await prisma.historicoTransacao.create({
+        data: {
+          tipoTransacao: 'DEPOSITO',
+          valor,
+          idUsuario: cartao.idUsuario,
+          responsavelId: req.userData.id, 
+        },
+      });
+
       console.log('Saldo atualizado com sucesso');
       return reply.code(200).send({ message: 'Saldo atualizado com sucesso', saldo: novoSaldo });
     } catch (error) {
@@ -154,10 +186,8 @@ const usuarioController = {
   async bloquearCartao(request, reply) {
     try {
       const { idCartao, motivo } = request.body;
-      console.log('Requisição para bloquear cartão recebida:', { idCartao, motivo });
-  
-      // Converta `idCartao` para número antes de usá-lo
       const cartaoId = parseInt(idCartao, 10);
+  
       if (isNaN(cartaoId)) {
         return reply.code(400).send({ error: 'ID do cartão inválido' });
       }
@@ -167,12 +197,10 @@ const usuarioController = {
       });
   
       if (!cartao) {
-        console.log('Cartão não encontrado');
         return reply.code(404).send({ error: 'Cartão não encontrado' });
       }
   
       if (cartao.status === 'BLOQUEADO') {
-        console.log('Cartão já está bloqueado');
         return reply.code(400).send({ error: 'Cartão já está bloqueado' });
       }
   
@@ -189,6 +217,17 @@ const usuarioController = {
         },
       });
   
+      // **Adição ao Histórico de Transações**
+      await prisma.historicoTransacao.create({
+        data: {
+          tipoTransacao: 'BLOQUEIO',
+          idUsuario: cartao.idUsuario,
+          responsavelId: request.userData.id, // Usuário responsável
+          valor: 0,
+          dataTransacao: new Date(),
+        },
+      });
+  
       console.log('Cartão bloqueado com sucesso');
       return reply.code(200).send({ message: 'Cartão bloqueado com sucesso' });
     } catch (error) {
@@ -200,10 +239,8 @@ const usuarioController = {
   async desbloquearCartao(request, reply) {
     try {
       const { idCartao } = request.body;
-      console.log('Requisição para desbloquear cartão recebida:', { idCartao });
-  
-      // Converta `idCartao` para número antes de usá-lo
       const cartaoId = parseInt(idCartao, 10);
+  
       if (isNaN(cartaoId)) {
         return reply.code(400).send({ error: 'ID do cartão inválido' });
       }
@@ -213,18 +250,27 @@ const usuarioController = {
       });
   
       if (!cartao) {
-        console.log('Cartão não encontrado');
         return reply.code(404).send({ error: 'Cartão não encontrado' });
       }
   
       if (cartao.status === 'ATIVO') {
-        console.log('Cartão já está ativo');
         return reply.code(400).send({ error: 'Cartão já está ativo' });
       }
   
       await prisma.cartao.update({
         where: { id: cartaoId },
         data: { status: 'ATIVO' },
+      });
+  
+      // **Adição ao Histórico de Transações**
+      await prisma.historicoTransacao.create({
+        data: {
+          tipoTransacao: 'DESBLOQUEIO',
+          idUsuario: cartao.idUsuario,
+          responsavelId: request.userData.id, // Usuário responsável
+          valor: 0,
+          dataTransacao: new Date(),
+        },
       });
   
       console.log('Cartão desbloqueado com sucesso');
@@ -237,25 +283,40 @@ const usuarioController = {
 
   async gerarRelatorio(request, reply) {
     try {
-      const { dataInicio, dataFim } = request.query;
-
+      const { dataInicio, dataFim, tipoTransacao } = request.query;
+  
+      if (!dataInicio || !dataFim) {
+        return reply.code(400).send({ message: 'Datas de início e fim são obrigatórias.' });
+      }
+  
+      const filtros = {
+        dataTransacao: {
+          gte: new Date(dataInicio),
+          lte: new Date(dataFim),
+        },
+      };
+  
+      if (tipoTransacao) {
+        filtros.tipoTransacao = tipoTransacao;
+      }
+  
       const relatorio = await prisma.historicoTransacao.findMany({
-        where: {
-          dataTransacao: {
-            gte: new Date(dataInicio),
-            lte: new Date(dataFim)
-          }
-        },
+        where: filtros,
         include: {
-          usuario: { select: { nome: true, matricula: true } }
+          usuario: { select: { nome: true, matricula: true } },
+          responsavel: { select: { nome: true } },
         },
-        orderBy: { dataTransacao: 'desc' }
+        orderBy: { dataTransacao: 'desc' },
       });
-
-      reply.code(200).send({ relatorio });
+  
+      if (!relatorio.length) {
+        return reply.code(404).send({ message: 'Nenhum dado encontrado.' });
+      }
+  
+      return reply.code(200).send({ relatorio });
     } catch (error) {
       console.error('Erro ao gerar relatório:', error);
-      reply.code(500).send({ error: 'Erro ao gerar relatório' });
+      return reply.code(500).send({ message: 'Erro ao gerar relatório.' });
     }
   }
 };

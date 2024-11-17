@@ -24,12 +24,18 @@ function Relatorio() {
   };
 
   const handleExportarPdf = async () => {
+    if (!dataInicio || !dataFim) {
+      setErro('As datas de início e fim são obrigatórias.');
+      return;
+    }
+    setErro('');
     try {
+      setLoading(true);
       const response = await api.get('/transacao/relatorio/pdf', {
         params: { dataInicio, dataFim, tipoTransacao },
         responseType: 'blob',
       });
-
+  
       const blob = new Blob([response.data], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -38,6 +44,8 @@ function Relatorio() {
       link.click();
     } catch (error) {
       setErro('Erro ao exportar PDF.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -54,6 +62,7 @@ function Relatorio() {
           <option value="DEPOSITO">Recargas</option>
           <option value="LOGIN">Logins</option>
           <option value="CADASTRO">Cadastros</option>
+          <option value="REFEICAO">Refeição</option>
         </select>
         <button type="submit">Gerar Relatório</button>
       </form>

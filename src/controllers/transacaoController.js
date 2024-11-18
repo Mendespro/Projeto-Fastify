@@ -2,7 +2,7 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const transacaoService = require('../services/transacaoService');
 const { validarEntradaTransacao } = require('../utils/validators');
-const { generatePdf } = require('../utils/pdfGenerator');
+const { generatePdfWithJsPDF } = require('../utils/pdfGenerator');
 
 const transacaoController = {
   async registrarAcesso(request, reply) {
@@ -121,15 +121,14 @@ const transacaoController = {
         return reply.code(404).send({ message: 'Nenhum dado encontrado para o filtro fornecido.' });
       }
   
-      const pdfBuffer = await generatePdf(relatorio, 'Relatório de Transações');
-      
+      const pdfBuffer = await generatePdfWithJsPDF(relatorio, 'Relatório de Transações');
       reply
         .header('Content-Type', 'application/pdf')
         .header('Content-Disposition', 'attachment; filename="relatorio.pdf"');
-      return reply.send(pdfBuffer);
+      return reply.send(Buffer.from(pdfBuffer));
     } catch (error) {
-      console.error('Erro ao gerar PDF:', error);
-      return reply.code(500).send({ message: 'Erro ao gerar PDF.' });
+      console.error('Erro ao gerar PDF:', error.message);
+      return reply.code(500).send({ message: 'Erro ao gerar PDF.', detalhes: error.message });
     }
   }
 };

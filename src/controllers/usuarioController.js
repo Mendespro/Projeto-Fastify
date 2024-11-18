@@ -129,7 +129,7 @@ const usuarioController = {
             tipoTransacao: 'DEPOSITO',
             valor,
             idUsuario: cartao.usuario.id,
-            responsavelId: request.userData.id, // Responsável pela operação
+            responsavelId: request.userData?.id || null, // Garante o registro do responsável, se disponível
           },
         });
       });

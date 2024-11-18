@@ -1,31 +1,35 @@
-const PDFDocument = require('pdfkit');
+const jsPDF = require('jspdf').default;
+require('jspdf-autotable');
 
-async function generatePdf(dados, titulo) {
-  const doc = new PDFDocument();
-  const buffers = [];
-  doc.on('data', buffers.push.bind(buffers));
-  doc.on('end', () => console.log('PDF gerado com sucesso.'));
+async function generatePdfWithJsPDF(dados, titulo) {
+  const doc = new jsPDF();
 
-  doc
-    .fontSize(18)
-    .text(titulo, { align: 'center' })
-    .moveDown(0.5);
+  // Cabeçalho do PDF
+  doc.setFontSize(18);
+  doc.text(titulo, 105, 20, { align: 'center' });
 
-  doc.fontSize(10);
-  doc.text(`Período: ${dados[0].dataTransacao} - ${dados[dados.length - 1].dataTransacao}`);
-  doc.moveDown(1);
+  // Informações Gerais
+  doc.setFontSize(12);
+  doc.text(`Relatório gerado em: ${new Date().toLocaleString()}`, 10, 30);
 
-  // Tabela manual
-  dados.forEach((item, index) => {
-    doc.text(`${index + 1}. Data: ${new Date(item.dataTransacao).toLocaleString()}`);
-    doc.text(`   Tipo: ${item.tipoTransacao}`);
-    doc.text(`   Usuário: ${item.usuario?.nome || 'N/A'}`);
-    doc.text(`   Responsável: ${item.responsavel?.nome || 'N/A'}`);
-    doc.moveDown(0.5);
+  // Configurar a tabela
+  const tableData = dados.map((item, index) => [
+    index + 1,
+    new Date(item.dataTransacao).toLocaleString(),
+    item.tipoTransacao,
+    item.usuario?.nome || 'N/A',
+    item.usuario?.matricula || 'N/A',
+    item.responsavel?.nome || 'N/A',
+  ]);
+
+  doc.autoTable({
+    head: [['#', 'Data', 'Tipo', 'Usuário', 'Matrícula', 'Responsável']],
+    body: tableData,
+    startY: 40,
   });
 
-  doc.end();
-  return Buffer.concat(buffers);
+  // Retorna o PDF em formato de Buffer
+  return doc.output('arraybuffer');
 }
 
-module.exports = { generatePdf };
+module.exports = { generatePdfWithJsPDF };

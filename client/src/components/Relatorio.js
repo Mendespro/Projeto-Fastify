@@ -9,17 +9,21 @@ function Relatorio() {
   const [tipoTransacao, setTipoTransacao] = useState('');
   const [relatorio, setRelatorio] = useState([]);
   const [erro, setErro] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleGerarRelatorio = async (e) => {
     e.preventDefault();
+    setErro('');
+    setLoading(true);
     try {
-      setErro('');
       const response = await api.get('/transacao/relatorio', {
         params: { dataInicio, dataFim, tipoTransacao },
       });
       setRelatorio(response.data.relatorio || []);
     } catch (error) {
       setErro(error.response?.data?.message || 'Erro ao gerar relatório.');
+    } finally {
+      setLoading(false); // Libera a tela após completar
     }
   };
 
@@ -28,24 +32,29 @@ function Relatorio() {
       setErro('As datas de início e fim são obrigatórias.');
       return;
     }
+
     setErro('');
+    setLoading(true); // Ativa o estado de carregamento
+
     try {
-      setLoading(true);
       const response = await api.get('/transacao/relatorio/pdf', {
         params: { dataInicio, dataFim, tipoTransacao },
-        responseType: 'blob',
+        responseType: 'blob', // Recebe o PDF como um blob
       });
-  
+
+      // Cria o link de download do PDF
       const blob = new Blob([response.data], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
       link.download = `relatorio_${Date.now()}.pdf`;
       link.click();
+
     } catch (error) {
+      console.error('Erro ao exportar PDF:', error);
       setErro('Erro ao exportar PDF.');
     } finally {
-      setLoading(false);
+      setLoading(false); // Libera o estado de carregamento
     }
   };
 
@@ -64,9 +73,13 @@ function Relatorio() {
           <option value="CADASTRO">Cadastros</option>
           <option value="REFEICAO">Refeição</option>
         </select>
-        <button type="submit">Gerar Relatório</button>
+        <button type="submit" disabled={loading}>
+          {loading ? 'Gerando...' : 'Gerar Relatório'}
+        </button>
       </form>
-      <button onClick={handleExportarPdf}>Exportar PDF</button>
+      <button onClick={handleExportarPdf} disabled={loading}>
+        {loading ? 'Exportando...' : 'Exportar PDF'}
+      </button>
       {erro && <p style={{ color: 'red' }}>{erro}</p>}
       {relatorio.length > 0 && (
         <table>

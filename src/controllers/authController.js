@@ -8,7 +8,6 @@ const authController = {
     const { email, senha } = request.body;
 
     try {
-      // Verifica se o usuário existe e é funcionário ou administrador
       const usuario = await prisma.usuario.findFirst({
         where: {
           email,
@@ -20,24 +19,21 @@ const authController = {
         return reply.status(401).send({ error: 'Credenciais inválidas' });
       }
 
-      // Garante que a chave JWT esteja definida
       if (!process.env.JWT_SECRET) {
         console.error('JWT_SECRET não está configurada');
         return reply.status(500).send({ error: 'Erro de configuração no servidor' });
       }
 
-      // Gera o token JWT
       const token = jwt.sign(
         { id: usuario.id, role: usuario.role, nome: usuario.nome },
         process.env.JWT_SECRET,
         { expiresIn: '1h' }
       );
 
-      // Registra o login no histórico de transações
       await prisma.historicoTransacao.create({
         data: {
           tipoTransacao: 'LOGIN',
-          valor: 0, // Logins não possuem valor associado
+          valor: 0,
           idUsuario: usuario.id,
         },
       });

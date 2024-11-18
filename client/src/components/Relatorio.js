@@ -23,7 +23,7 @@ function Relatorio() {
     } catch (error) {
       setErro(error.response?.data?.message || 'Erro ao gerar relatório.');
     } finally {
-      setLoading(false); // Libera a tela após completar
+      setLoading(false);
     }
   };
 
@@ -34,15 +34,14 @@ function Relatorio() {
     }
 
     setErro('');
-    setLoading(true); // Ativa o estado de carregamento
+    setLoading(true);
 
     try {
       const response = await api.get('/transacao/relatorio/pdf', {
         params: { dataInicio, dataFim, tipoTransacao },
-        responseType: 'blob', // Recebe o PDF como um blob
+        responseType: 'blob',
       });
 
-      // Cria o link de download do PDF
       const blob = new Blob([response.data], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -54,7 +53,7 @@ function Relatorio() {
       console.error('Erro ao exportar PDF:', error);
       setErro('Erro ao exportar PDF.');
     } finally {
-      setLoading(false); // Libera o estado de carregamento
+      setLoading(false);
     }
   };
 

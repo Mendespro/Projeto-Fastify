@@ -23,7 +23,6 @@ const transacaoService = {
         throw new Error('Saldo insuficiente');
       }
 
-      // Registrar transação e atualizar saldo
       const transacao = await tx.historicoTransacao.create({
         data: { tipoTransacao, valor, idUsuario: cartao.idUsuario }
       });

@@ -13,7 +13,7 @@ function Recarga() {
     try {
       const response = await api.post('/usuarios/recarregar', {
         idCartao,
-        valor: parseFloat(valor)  // Converte para número antes de enviar
+        valor: parseFloat(valor) 
       });
       alert('Recarga realizada com sucesso!');
     } catch (error) {

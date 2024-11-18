@@ -16,10 +16,8 @@ const usuarioController = {
         }
       }
   
-      // Valida entrada
       validarEntradaUsuario(usuarioData.nome, usuarioData.matricula, usuarioData.senha, usuarioData.role);
   
-      // Verifica duplicidade
       const usuarioExistente = await prisma.usuario.findFirst({
         where: { OR: [{ matricula: usuarioData.matricula }, { email: usuarioData.email }] },
       });
@@ -28,7 +26,6 @@ const usuarioController = {
         return reply.code(400).send({ error: 'Matrícula ou email já cadastrados.' });
       }
   
-      // Criação com transação
       await prisma.$transaction(async (tx) => {
         const senha = usuarioData.role !== 'ALUNO' ? hashPassword(usuarioData.senha) : null;
   
@@ -54,13 +51,12 @@ const usuarioController = {
           });
         }
   
-        // **Registro no histórico**
         await tx.historicoTransacao.create({
           data: {
             tipoTransacao: 'CADASTRO',
-            idUsuario: usuarioCriado.id, // Usuário que foi criado
-            responsavelId: request.userData.id, // Usuário responsável (vem do token JWT)
-            valor: 0, // Sem valor associado ao cadastro
+            idUsuario: usuarioCriado.id, 
+            responsavelId: request.userData.id, 
+            valor: 0, 
           },
         });
       });
@@ -117,19 +113,18 @@ const usuarioController = {
       const novoSaldo = cartao.usuario.saldo + valor;
   
       await prisma.$transaction(async (tx) => {
-        // Atualiza o saldo do usuário
+
         await tx.usuario.update({
           where: { id: cartao.usuario.id },
           data: { saldo: novoSaldo },
         });
   
-        // Registra a transação no histórico
         await tx.historicoTransacao.create({
           data: {
             tipoTransacao: 'DEPOSITO',
             valor,
             idUsuario: cartao.usuario.id,
-            responsavelId: request.userData?.id || null, // Garante o registro do responsável, se disponível
+            responsavelId: request.userData?.id || null, 
           },
         });
       });
@@ -150,7 +145,6 @@ const usuarioController = {
         return reply.code(400).send({ error: 'Valor de recarga inválido' });
       }
   
-      // Encontre o usuário pelo campo matrícula
       const usuario = await prisma.usuario.findUnique({
         where: { matricula: matricula }
       });
@@ -159,7 +153,6 @@ const usuarioController = {
         return reply.code(404).send({ error: 'Usuário não encontrado' });
       }
   
-      // Atualize o saldo do usuário
       const novoSaldo = usuario.saldo + valor;
       await prisma.usuario.update({
         where: { matricula: matricula },
@@ -217,12 +210,11 @@ const usuarioController = {
         },
       });
   
-      // **Adição ao Histórico de Transações**
       await prisma.historicoTransacao.create({
         data: {
           tipoTransacao: 'BLOQUEIO',
           idUsuario: cartao.idUsuario,
-          responsavelId: request.userData.id, // Usuário responsável
+          responsavelId: request.userData.id,
           valor: 0,
           dataTransacao: new Date(),
         },

@@ -12,7 +12,6 @@ function verificarPermissao(role) {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       req.userData = decoded;
 
-      // Verificação de função do usuário
       if (role && decoded.role !== role && decoded.role !== 'ADMIN') {
         return reply.code(403).send({ message: 'Acesso negado: Permissão insuficiente' });
       }

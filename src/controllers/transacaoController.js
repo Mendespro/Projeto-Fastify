@@ -25,7 +25,6 @@ const transacaoController = {
     try {
       const { numeroCartao, matricula, valor } = request.body;
       
-      // Validação e registro da recarga
       const cartao = await transacaoService.validarCartao(numeroCartao, matricula);
       const resultado = await transacaoService.registrarTransacao(cartao.id, 'DEPOSITO', valor);
 
@@ -39,7 +38,6 @@ const transacaoController = {
     try {
       const { numeroCartao, motivo } = request.body;
       
-      // Validação e bloqueio do cartão
       const cartao = await transacaoService.validarCartao(numeroCartao);
       const resultado = await transacaoService.bloquearCartao(cartao.id, motivo);
 

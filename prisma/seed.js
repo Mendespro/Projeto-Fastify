@@ -46,6 +46,8 @@ async function main() {
       hashCartao: hashCartaoAluno,
       status: "ATIVO",
       idUsuario: aluno.id,
+      ultimoTimestamp: new Date(),
+      leitorId: "leitor123",
     },
   });
 

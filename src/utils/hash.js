@@ -1,9 +1,10 @@
-const { createHash } = require('crypto');
 const bcrypt = require('bcrypt');
+const { createHash, randomBytes } = require('crypto');
 
 const generateCardHash = (matricula) => {
-  const timestamp = new Date().toISOString().slice(0, 10);
-  return createHash('sha256').update(`${matricula}${timestamp}`).digest('hex');
+  const timestamp = new Date().toISOString();
+  const randomString = randomBytes(16).toString('hex');
+  return createHash('sha256').update(`${matricula}${timestamp}${randomString}`).digest('hex');
 };
 
 const hashPassword = (senha) => {

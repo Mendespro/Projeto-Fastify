@@ -1,21 +1,28 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const transacaoService = require('../services/transacaoService');
-const { validarEntradaTransacao } = require('../utils/validators');
 const { generatePdfWithJsPDF } = require('../utils/pdfGenerator');
 
 const transacaoController = {
   async registrarAcesso(request, reply) {
     try {
-      const { numeroCartao, matricula, tipoTransacao } = request.body;
-      const valor = tipoTransacao === 'REFEICAO' ? 2.5 : 0;
-      
-      validarEntradaTransacao(numeroCartao, matricula, valor);
-
-      const cartao = await transacaoService.validarCartao(numeroCartao, matricula);
-      const resultado = await transacaoService.registrarTransacao(cartao.id, tipoTransacao, valor);
-
-      return reply.code(200).send({ message: 'Acesso autorizado', resultado });
+      const {hashCartao , matricula, leitorId } = request.body;
+  
+      const {autenticado, cartao} = await transacaoService.realizarAutenticacaoMutua(hashCartao , leitorId);
+  
+      if (!autenticado) {
+        return reply.code(403).send({ error: 'Acesso negado' });
+      }
+  
+      const acesso = await prisma.acesso.create({
+        data: {
+          idCartao: cartao.id,
+          permitido: true,
+          observacao: 'Acesso autenticado com sucesso',
+        },
+      });
+  
+      return reply.code(200).send({ message: 'Acesso permitido', acesso });
     } catch (error) {
       return reply.code(500).send({ error: error.message });
     }
@@ -23,9 +30,9 @@ const transacaoController = {
 
   async realizarRecarga(request, reply) {
     try {
-      const { numeroCartao, matricula, valor } = request.body;
+      const { hashCartao, matricula, valor} = request.body;
       
-      const cartao = await transacaoService.validarCartao(numeroCartao, matricula);
+      const cartao = await transacaoService.validarCartao(hashCartao, matricula);
       const resultado = await transacaoService.registrarTransacao(cartao.id, 'DEPOSITO', valor);
 
       return reply.code(200).send({ message: 'Recarga realizada com sucesso', resultado });
@@ -36,9 +43,9 @@ const transacaoController = {
 
   async bloquearCartao(request, reply) {
     try {
-      const { numeroCartao, motivo } = request.body;
+      const { hashCartao, motivo} = request.body;
       
-      const cartao = await transacaoService.validarCartao(numeroCartao);
+      const cartao = await transacaoService.validarCartao(hashCartao);
       const resultado = await transacaoService.bloquearCartao(cartao.id, motivo);
 
       return reply.code(200).send({ message: 'Cartão bloqueado com sucesso', resultado });

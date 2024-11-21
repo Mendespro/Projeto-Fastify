@@ -23,14 +23,16 @@ model Usuario {
 }
 
 model Cartao {
-  id           Int              @id @default(autoincrement())
-  hashCartao   String           @unique
-  status       Status           @default(ATIVO)
-  dataAtivacao DateTime         @default(now())
-  idUsuario    Int
-  acessos      Acesso[]
-  bloqueios    BloqueioCartao[]
-  usuario      Usuario          @relation(fields: [idUsuario], references: [id])
+  id                Int              @id @default(autoincrement())
+  hashCartao        String           @unique
+  status            Status           @default(ATIVO)
+  dataAtivacao      DateTime         @default(now())
+  idUsuario         Int
+  ultimoTimestamp   DateTime?        // Armazena o último timestamp para prevenção de replay
+  leitorId          String?          // Identificador do leitor associado, se necessário
+  acessos           Acesso[]
+  bloqueios         BloqueioCartao[]
+  usuario           Usuario          @relation(fields: [idUsuario], references: [id])
 }
 
 model HistoricoTransacao {

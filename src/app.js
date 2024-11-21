@@ -15,13 +15,13 @@ fastify.register(cors, {
 fastify.register(swagger, {
   routePrefix: '/documentation',
   swagger: {
-    info: { title: 'Smart Campus API', version: '1.0.0' },
-    host: 'localhost:3000',
-    schemes: ['http'],
-    consumes: ['application/json', 'multipart/form-data'],
-    produces: ['application/json']
+    info: {
+      title: 'Smart Campus API',
+      description: 'API com autenticação mútua e prevenção contra ataques de replay.',
+      version: '1.1.0',
+    },
   },
-  exposeRoute: true
+  exposeRoute: true,
 });
 
 fastify.addHook('onClose', async (instance, done) => {

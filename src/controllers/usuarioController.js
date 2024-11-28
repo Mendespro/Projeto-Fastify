@@ -60,6 +60,13 @@ const usuarioController = {
           });
         }
 
+        await tx.historicoTransacao.create({
+          data: {
+            tipoTransacao: 'CADASTRO', 
+            valor: 0,                 
+            idUsuario: novoUsuario.id,
+          },
+        });
         return novoUsuario;
       });
 

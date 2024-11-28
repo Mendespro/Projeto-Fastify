@@ -1,14 +1,24 @@
-let lastTimestamps = {};
+const lastTimestamps = {};
 
-const preventReplay = (request, reply, next) => {
-  const { timestamp, cartaoId } = request.body;
+const preventReplay = async (request, reply, next) => {
+  try {
+    const { hashCartao, timestamp } = request.body;
 
-  if (lastTimestamps[cartaoId] && lastTimestamps[cartaoId] >= timestamp) {
-    return reply.code(403).send({ error: 'Mensagem já usada' });
+    if (!hashCartao || !timestamp) {
+      return reply.code(400).send({ error: 'Campos obrigatórios ausentes' });
+    }
+
+    if (lastTimestamps[hashCartao] && lastTimestamps[hashCartao] >= timestamp) {
+      return reply.code(403).send({ error: 'Mensagem já usada' });
+    }
+
+    lastTimestamps[hashCartao] = timestamp;
+
+    next(); 
+  } catch (error) {
+    console.error('Erro no middleware preventReplay:', error.message);
+    return reply.code(500).send({ error: 'Erro interno no middleware' });
   }
-
-  lastTimestamps[cartaoId] = timestamp;
-  next();
 };
 
 module.exports = preventReplay;

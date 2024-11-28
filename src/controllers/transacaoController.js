@@ -6,25 +6,16 @@ const { generatePdfWithJsPDF } = require('../utils/pdfGenerator');
 const transacaoController = {
   async registrarAcesso(request, reply) {
     try {
-      const {hashCartao , matricula, leitorId } = request.body;
+      const { hashCartao, leitorId, timestamp } = request.body;
   
-      const {autenticado, cartao} = await transacaoService.realizarAutenticacaoMutua(hashCartao , leitorId);
-  
-      if (!autenticado) {
-        return reply.code(403).send({ error: 'Acesso negado' });
+      if (!hashCartao || !leitorId || !timestamp) {
+        return reply.code(400).send({ error: 'Campos obrigatórios ausentes' });
       }
   
-      const acesso = await prisma.acesso.create({
-        data: {
-          idCartao: cartao.id,
-          permitido: true,
-          observacao: 'Acesso autenticado com sucesso',
-        },
-      });
-  
-      return reply.code(200).send({ message: 'Acesso permitido', acesso });
+      return reply.code(200).send({ message: 'Acesso registrado com sucesso!' });
     } catch (error) {
-      return reply.code(500).send({ error: error.message });
+      console.error('Erro ao registrar acesso:', error.message);
+      return reply.code(500).send({ error: 'Erro interno ao registrar acesso' });
     }
   },
 

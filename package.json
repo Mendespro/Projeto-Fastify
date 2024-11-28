@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "node src/server.js",
     "start": "node src/server.js",
-    "test": "mocha src/tests/*.test.js",
+    "test": "mocha tests/**/*.test.js --timeout 10000",
     "test:watch": "mocha scr/tests/*.test.js --watch"
   },
   "prisma": {

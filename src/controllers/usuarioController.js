@@ -1,13 +1,13 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const { hashPassword, generateCardHash } = require('../utils/hash');
-const { validarEntradaUsuario } = require('../utils/validators');
 
 const usuarioController = {
   async criarUsuario(request, reply) {
     try {
       const parts = await request.parts();
       let usuarioData = {};
+
       for await (const part of parts) {
         if (part.file) {
           usuarioData.fotoUsuario = await part.toBuffer();
@@ -15,60 +15,64 @@ const usuarioController = {
           usuarioData[part.fieldname] = part.value;
         }
       }
-  
-      validarEntradaUsuario(usuarioData.nome, usuarioData.matricula, usuarioData.senha, usuarioData.role);
-  
+
+      if (!usuarioData.nome || !usuarioData.matricula || !usuarioData.email || !usuarioData.role) {
+        return reply.code(400).send({ error: 'Campos obrigatórios estão faltando.' });
+      }
+
+      if (usuarioData.fotoUsuario && !Buffer.isBuffer(usuarioData.fotoUsuario)) {
+        return reply.code(400).send({ error: 'Arquivo de foto inválido.' });
+      }
+
       const usuarioExistente = await prisma.usuario.findFirst({
-        where: { OR: [{ matricula: usuarioData.matricula }, { email: usuarioData.email }] },
+        where: { 
+          OR: [
+            { matricula: usuarioData.matricula },
+            { email: usuarioData.email }
+          ]
+        },
       });
-  
+
       if (usuarioExistente) {
         return reply.code(400).send({ error: 'Matrícula ou email já cadastrados.' });
       }
-  
-      await prisma.$transaction(async (tx) => {
-        const senha = usuarioData.role !== 'ALUNO' ? hashPassword(usuarioData.senha) : null;
-  
-        const usuarioCriado = await tx.usuario.create({
+
+      const usuarioCriado = await prisma.$transaction(async (tx) => {
+        const novoUsuario = await tx.usuario.create({
           data: {
             nome: usuarioData.nome,
             matricula: usuarioData.matricula,
             email: usuarioData.email,
-            senha,
+            senha: usuarioData.role !== 'ALUNO' ? hashPassword(usuarioData.senha) : null,
             fotoUsuario: usuarioData.fotoUsuario || null,
             role: usuarioData.role,
           },
         });
-  
+
         if (usuarioData.role === 'ALUNO') {
           const hashCartao = generateCardHash(usuarioData.matricula);
           await tx.cartao.create({
             data: {
               hashCartao,
               status: 'ATIVO',
-              idUsuario: usuarioCriado.id,
+              idUsuario: novoUsuario.id,
             },
           });
         }
-  
-        await tx.historicoTransacao.create({
-          data: {
-            tipoTransacao: 'CADASTRO',
-            idUsuario: usuarioCriado.id, 
-            responsavelId: request.userData.id, 
-            valor: 0, 
-          },
-        });
+
+        return novoUsuario;
       });
-  
-      return reply.code(201).send({ message: 'Usuário cadastrado com sucesso!' });
+
+      return reply.code(201).send({ 
+        message: 'Usuário cadastrado com sucesso!', 
+        usuario: usuarioCriado 
+      });
     } catch (error) {
       console.error('Erro ao cadastrar usuário:', error);
   
       if (error.code === 'P2002') {
-        return reply.code(400).send({ error: 'Matrícula ou email já estão em uso.' });
+        return reply.code(400).send({ error: 'Matrícula ou email já cadastrados.' });
       }
-  
       return reply.code(500).send({ error: 'Erro ao processar cadastro.' });
     }
   },
@@ -86,10 +90,10 @@ const usuarioController = {
         return reply.code(404).send({ error: 'Usuário não encontrado' });
       }
 
-      reply.send(usuario);
+      return reply.send(usuario);
     } catch (error) {
       console.error('Erro ao buscar usuário:', error);
-      reply.code(500).send({ error: 'Erro ao buscar usuário' });
+      return reply.code(500).send({ error: 'Erro ao buscar usuário' });
     }
   },
 

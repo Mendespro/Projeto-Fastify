@@ -48,6 +48,27 @@ const authController = {
       reply.status(500).send({ error: 'Erro ao processar login' });
     }
   },
+
+  async validateToken(request, reply) {
+    try {
+      const authHeader = request.headers.authorization;
+
+      if (!authHeader) {
+        return reply.status(401).send({ error: 'Token não fornecido' });
+      }
+
+      const token = authHeader.split(' ')[1];
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+      reply.status(200).send({
+        valid: true,
+        usuario: decoded,
+      });
+    } catch (error) {
+      console.error('Erro na validação do token:', error);
+      reply.status(401).send({ valid: false, error: 'Token inválido ou expirado' });
+    }
+  },
 };
 
 module.exports = authController;

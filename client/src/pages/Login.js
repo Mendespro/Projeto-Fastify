@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import api from '../api/api';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -11,11 +11,12 @@ const Login = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post(`${process.env.REACT_APP_API_URL}/login`, { email, senha });
+      const response = await api.post('/login', { email, senha });
       localStorage.setItem('token', response.data.token);
-      navigate('/dashboard');
-    } catch (err) {
-      setError('Login falhou. Verifique suas credenciais.');
+      navigate('/'); // Redireciona para a página inicial
+    } catch (error) {
+      console.error('Erro no login:', error);
+      setError('Falha ao fazer login. Verifique suas credenciais.');
     }
   };
 
@@ -23,8 +24,8 @@ const Login = () => {
     <div>
       <h2>Login</h2>
       <form onSubmit={handleLogin}>
-        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" />
-        <input type="password" value={senha} onChange={(e) => setSenha(e.target.value)} placeholder="Senha" />
+        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" required />
+        <input type="password" value={senha} onChange={(e) => setSenha(e.target.value)} placeholder="Senha" required />
         <button type="submit">Entrar</button>
         {error && <p>{error}</p>}
       </form>

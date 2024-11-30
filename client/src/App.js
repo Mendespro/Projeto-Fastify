@@ -20,7 +20,7 @@ function App() {
           <Route path="/recarga" element={<Recarga />} />
           <Route path="/relatorio" element={<Relatorio />} />
         </Route>
-        <Route path="*" element={<Navigate to="/login" />} />
+        <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>
   );

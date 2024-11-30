@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import api from '../api/api';
+import '../style/Cadastro.css';
 
 function Cadastro() {
   const [form, setForm] = useState({
@@ -23,13 +24,9 @@ function Cadastro() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (isSubmitting) {
-      console.log('Requisição bloqueada: já em andamento.');
-      return;
-    }
+    if (isSubmitting) return;
 
     setIsSubmitting(true);
-    console.log('Iniciando requisição de cadastro...');
 
     try {
       const formData = new FormData();
@@ -39,68 +36,92 @@ function Cadastro() {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
-      if (data.message) {
-        alert(data.message);
-        console.log('Requisição concluída com sucesso:', data.message);
-        setForm({ nome: '', matricula: '', email: '', role: 'ALUNO', senha: '', foto: null });
-      } else {
-        throw new Error(data.error || 'Erro ao processar cadastro.');
-      }
+      alert(data.message || 'Cadastro realizado com sucesso!');
+      setForm({ nome: '', matricula: '', email: '', role: 'ALUNO', senha: '', foto: null });
     } catch (error) {
-      console.error('Erro durante a requisição:', error);
-      alert(error.response?.data?.error || error.message || 'Erro ao cadastrar usuário.');
+      alert(error.response?.data?.error || 'Erro ao cadastrar usuário.');
     } finally {
       setIsSubmitting(false);
-      console.log('Requisição finalizada.');
     }
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <input
-        type="text"
-        name="nome"
-        placeholder="Nome"
-        value={form.nome}
-        onChange={handleChange}
-        required
-      />
-      <input
-        type="text"
-        name="matricula"
-        placeholder="Matrícula"
-        value={form.matricula}
-        onChange={handleChange}
-        required
-      />
-      <input
-        type="email"
-        name="email"
-        placeholder="Email"
-        value={form.email}
-        onChange={handleChange}
-        required
-      />
-      <select name="role" value={form.role} onChange={handleChange}>
-        <option value="ALUNO">Aluno</option>
-        <option value="FUNCIONARIO">Funcionário</option>
-        <option value="ADMIN">Administrador</option>
-      </select>
-      {form.role !== 'ALUNO' && (
-        <input
-          type="password"
-          name="senha"
-          placeholder="Senha"
-          value={form.senha}
-          onChange={handleChange}
-          required
-        />
-      )}
-      <input type="file" name="foto" onChange={handleChange} />
-      <button type="submit" disabled={isSubmitting}>
-        {isSubmitting ? 'Cadastrando...' : 'Cadastrar'}
-      </button>
-    </form>
+    <div className="cadastro-container">
+      <h2>Cadastro de Usuário</h2>
+      <form onSubmit={handleSubmit} className="cadastro-form">
+        <div className="form-group">
+          <label htmlFor="nome">Nome</label>
+          <input
+            type="text"
+            id="nome"
+            name="nome"
+            placeholder="Digite o nome"
+            value={form.nome}
+            onChange={handleChange}
+            required
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="matricula">Matrícula</label>
+          <input
+            type="text"
+            id="matricula"
+            name="matricula"
+            placeholder="Digite a matrícula"
+            value={form.matricula}
+            onChange={handleChange}
+            required
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="email">Email</label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            placeholder="Digite o email"
+            value={form.email}
+            onChange={handleChange}
+            required
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="role">Papel</label>
+          <select id="role" name="role" value={form.role} onChange={handleChange}>
+            <option value="ALUNO">Aluno</option>
+            <option value="FUNCIONARIO">Funcionário</option>
+            <option value="ADMIN">Administrador</option>
+          </select>
+        </div>
+
+        {form.role !== 'ALUNO' && (
+          <div className="form-group">
+            <label htmlFor="senha">Senha</label>
+            <input
+              type="password"
+              id="senha"
+              name="senha"
+              placeholder="Digite a senha"
+              value={form.senha}
+              onChange={handleChange}
+              required
+            />
+          </div>
+        )}
+
+        <div className="form-group">
+          <label htmlFor="foto">Foto</label>
+          <input type="file" id="foto" name="foto" onChange={handleChange} />
+        </div>
+
+        <button type="submit" className="submit-button" disabled={isSubmitting}>
+          {isSubmitting ? 'Cadastrando...' : 'Cadastrar'}
+        </button>
+      </form>
+    </div>
   );
 }
 

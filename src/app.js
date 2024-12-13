@@ -1,4 +1,7 @@
-const fastify = require('fastify')({ logger: true });
+const fastify = require('fastify')({
+  logger: true,
+  bodyLimit: 1048576, 
+});
 const prisma = require('./config/database');
 const swagger = require('@fastify/swagger');
 const cors = require('@fastify/cors'); 

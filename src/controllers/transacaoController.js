@@ -1,23 +1,45 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
-const transacaoService = require('../services/transacaoService');
+const { transacaoService } = require('../services/transacaoService');
 const { generatePdfWithJsPDF } = require('../utils/pdfGenerator');
 
 const transacaoController = {
   async registrarAcesso(request, reply) {
     try {
       const { hashCartao, leitorId, timestamp } = request.body;
-  
+    
       if (!hashCartao || !leitorId || !timestamp) {
         return reply.code(400).send({ error: 'Campos obrigatórios ausentes' });
       }
   
+      const autenticacao = await transacaoService.realizarAutenticacaoMutua(hashCartao, leitorId);
+  
       return reply.code(200).send({ message: 'Acesso registrado com sucesso!' });
     } catch (error) {
       console.error('Erro ao registrar acesso:', error.message);
-      return reply.code(500).send({ error: 'Erro interno ao registrar acesso' });
+      if (!reply.sent) {
+        return reply.code(500).send({ error: 'Erro interno ao registrar acesso' });
+      }
     }
   },
+
+  async realizarDebito(request, reply) {
+    try {
+      const { cartaoId } = request.body;
+  
+      if (!cartaoId) {
+        return reply.code(400).send({ error: 'O ID do cartão é obrigatório.' });
+      }
+  
+      const valorRefeicao = 1.00; 
+      const resultado = await transacaoService.registrarTransacao(cartaoId, 'REFEICAO', valorRefeicao);
+  
+      reply.code(200).send({ message: 'Débito realizado com sucesso', resultado });
+    } catch (error) {
+      console.error('Erro ao realizar débito:', error);
+      reply.code(500).send({ error: error.message });
+    }
+  },  
 
   async realizarRecarga(request, reply) {
     try {

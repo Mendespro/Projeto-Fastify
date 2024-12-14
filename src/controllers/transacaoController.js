@@ -14,7 +14,6 @@ const transacaoController = {
   
       const autenticacao = await transacaoService.realizarAutenticacaoMutua(hashCartao, leitorId);
   
-      // Se `realizarAutenticacaoMutua` já registra na tabela `Acesso`, este bloco pode ser omitido.
       if (autenticacao.autenticado) {
         await prisma.acesso.create({
           data: {
@@ -30,8 +29,7 @@ const transacaoController = {
       console.error('Erro ao registrar acesso:', error.message);
       reply.code(500).send({ error: 'Erro interno ao registrar acesso.' });
     }
-  }
-  ,
+  },
 
   async realizarDebito(request, reply) {
     try {

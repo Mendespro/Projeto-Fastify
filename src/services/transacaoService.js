@@ -8,36 +8,44 @@ const transacaoService = {
     if (!leitoresAutorizados.includes(leitorId)) {
       throw new Error('Leitor não autorizado.');
     }
-
+  
     const timestamp = new Date().toISOString();
     const randomString = randomBytes(16).toString('hex');
     const servidorHash = createHash('sha256').update(`${leitorId}${timestamp}${randomString}`).digest('hex');
-
+  
     const cartao = await prisma.cartao.findUnique({
       where: { hashCartao: cartaoHash },
       include: { usuario: true },
     });
-
+  
     if (!cartao || cartao.status !== 'ATIVO') {
       throw new Error('Cartão inválido ou bloqueado.');
     }
-
+  
     const autenticacaoValida = cartaoHash === cartao.hashCartao;
-    
+  
     if (!autenticacaoValida) {
       throw new Error('Falha na autenticação mútua.');
     }
-
+  
     const novoHashCartao = createHash('sha256').update(`${cartao.hashCartao}${timestamp}${randomString}`).digest('hex');
-    
+  
     await prisma.cartao.update({
       where: { id: cartao.id },
       data: {
-        hashCartao: novoHashCartao, 
-        leitorId: leitorId, 
+        hashCartao: novoHashCartao,
+        leitorId: leitorId,
       },
     });
-
+  
+    await prisma.acesso.create({
+      data: {
+        idCartao: cartao.id,
+        permitido: autenticacaoValida,
+        observacao: 'Acesso autenticado com sucesso.',
+      },
+    });
+  
     return { autenticado: true, cartao, timestamp, novoHashCartao };
   },
 
@@ -61,13 +69,19 @@ const transacaoService = {
     }
   
     return prisma.$transaction(async (tx) => {
+      
       const cartao = await tx.cartao.findUnique({
-        where: { id: cartaoId }, // Validação garantida pelo Prisma
-        include: { usuario: true },
+        where: { id: cartaoId },
+        include: { usuario: true, bloqueios: true },
       });
   
       if (!cartao) {
         throw new Error('Cartão não encontrado.');
+      }
+  
+      const isBloqueado = cartao.status === 'BLOQUEADO' || cartao.bloqueios.length > 0;
+      if (isBloqueado) {
+        throw new Error('Cartão bloqueado. Não é possível realizar a transação.');
       }
   
       if (tipoTransacao === 'REFEICAO' && cartao.usuario.saldo < valor) {

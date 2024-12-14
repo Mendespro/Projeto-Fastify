@@ -7,21 +7,31 @@ const transacaoController = {
   async registrarAcesso(request, reply) {
     try {
       const { hashCartao, leitorId, timestamp } = request.body;
-    
+  
       if (!hashCartao || !leitorId || !timestamp) {
-        return reply.code(400).send({ error: 'Campos obrigatórios ausentes' });
+        return reply.code(400).send({ error: 'Campos obrigatórios ausentes.' });
       }
   
       const autenticacao = await transacaoService.realizarAutenticacaoMutua(hashCartao, leitorId);
   
-      return reply.code(200).send({ message: 'Acesso registrado com sucesso!' });
+      // Se `realizarAutenticacaoMutua` já registra na tabela `Acesso`, este bloco pode ser omitido.
+      if (autenticacao.autenticado) {
+        await prisma.acesso.create({
+          data: {
+            idCartao: autenticacao.cartao.id,
+            permitido: true,
+            observacao: 'Acesso bem-sucedido.',
+          },
+        });
+      }
+  
+      reply.code(200).send({ message: 'Acesso registrado com sucesso!' });
     } catch (error) {
       console.error('Erro ao registrar acesso:', error.message);
-      if (!reply.sent) {
-        return reply.code(500).send({ error: 'Erro interno ao registrar acesso' });
-      }
+      reply.code(500).send({ error: 'Erro interno ao registrar acesso.' });
     }
-  },
+  }
+  ,
 
   async realizarDebito(request, reply) {
     try {

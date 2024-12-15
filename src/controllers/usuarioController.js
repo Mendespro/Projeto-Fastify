@@ -56,6 +56,8 @@ const usuarioController = {
               hashCartao,
               status: 'ATIVO',
               idUsuario: novoUsuario.id,
+              ultimoTimestamp: new Date(),
+              leitorId: "leitor123",
             },
           });
         }
